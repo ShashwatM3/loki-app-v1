@@ -1,36 +1,15 @@
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
-import { firebaseAuth } from '../lib/firebase';
-import { doc, getDoc, setDoc } from '@react-native-firebase/firestore';
-import { db } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { apiClient } from './apiClient';
 import type { UserData } from '../lib/types';
 
 class AuthService {
-  constructor() {
-    this.configureGoogleSignIn();
-  }
-
-  private configureGoogleSignIn() {
-    GoogleSignin.configure({
-      webClientId: process.env.FIREBASE_CLIENT_ID,
-      offlineAccess: true,
-    });
-  }
-
   async signInWithGoogle(): Promise<UserData> {
     try {
-      // Check if device supports Google Play Services
-      await GoogleSignin.hasPlayServices();
-
-      // Sign in with Google
-      const userInfo = await GoogleSignin.signIn();
-      const tokens = await GoogleSignin.getTokens();
-      
-      // Create Firebase credential
-      const googleCredential = firebaseAuth.GoogleAuthProvider.credential(tokens.idToken);
-      
-      // Sign in to Firebase
-      const userCredential = await firebaseAuth().signInWithCredential(googleCredential);
+      // For Expo Go, we use browser-based Google Sign-In
+      const provider = new GoogleAuthProvider();
+      const userCredential = await signInWithPopup(auth, provider);
       const user = userCredential.user;
 
       // Check if user document exists, create if not
@@ -55,7 +34,7 @@ class AuthService {
         };
 
         await setDoc(userDocRef, newUser);
-        
+
         // Call create-account API
         try {
           await apiClient.post('/api/create-account', {
@@ -73,22 +52,14 @@ class AuthService {
       return userDocSnap.data() as UserData;
 
     } catch (error: any) {
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        throw new Error('Sign-in was cancelled');
-      } else if (error.code === statusCodes.IN_PROGRESS) {
-        throw new Error('Sign-in is already in progress');
-      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        throw new Error('Google Play Services not available');
-      } else {
-        throw error;
-      }
+      console.error('Error signing in with Google:', error);
+      throw new Error(error.message || 'Failed to sign in with Google');
     }
   }
 
   async signOut(): Promise<void> {
     try {
-      await GoogleSignin.signOut();
-      await firebaseAuth().signOut();
+      await auth.signOut();
     } catch (error) {
       console.error('Error signing out:', error);
       throw error;
@@ -96,7 +67,7 @@ class AuthService {
   }
 
   async getCurrentUser(): Promise<UserData | null> {
-    const user = firebaseAuth().currentUser;
+    const user = auth.currentUser;
     if (!user) return null;
 
     try {
@@ -114,7 +85,7 @@ class AuthService {
   }
 
   onAuthStateChanged(callback: (user: UserData | null) => void) {
-    return firebaseAuth().onAuthStateChanged(async (firebaseUser: any) => {
+    return auth.onAuthStateChanged(async (firebaseUser: any) => {
       if (firebaseUser) {
         const userData = await this.getCurrentUser();
         callback(userData);

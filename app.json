@@ -9,12 +9,7 @@
     "scheme": "loki",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.loki.app",
-      "config": {
-        "googleSignIn": {
-          "reservedClientId": "app.loki.com"
-        }
-      }
+      "bundleIdentifier": "com.loki.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -23,18 +18,10 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "com.loki.app",
-      "permissions": [
-        "INTERNET",
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
-      ]
+      "package": "com.loki.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    },
-    "plugins": [
-      "expo-maps"
-    ]
+    }
   }
 }

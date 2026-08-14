@@ -1,13 +1,22 @@
-// Use require for React Native Firebase modules due to TypeScript export issues
-const auth = require('@react-native-firebase/auth').default;
-const firestore = require('@react-native-firebase/firestore').default;
-const storage = require('@react-native-firebase/storage').default;
+import { initializeApp, getApps } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
+
+const firebaseConfig = {
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.FIREBASE_APP_ID,
+  measurementId: process.env.FIREBASE_MEASUREMENT_ID,
+};
 
 // Initialize Firebase
-const db = firestore();
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
 
-// Export as named exports
-export { auth, db, storage };
-export const firebaseAuth = auth;
-export const firebaseDb = db;
-export const firebaseStorage = storage;
+export { app, auth, db, storage };

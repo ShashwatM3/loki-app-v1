@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { doc, getDoc, setDoc, collection, getDocs } from '@react-native-firebase/firestore';
+import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from './firebase';
 import type { UserData, Place, CollectionType, CustomSubfilter } from './types';
 

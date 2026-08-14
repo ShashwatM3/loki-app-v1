@@ -2,6 +2,8 @@
 
 A fully-functional React Native version of the LOKI web application with Google Sign-In, place discovery, collection management, and real-time Firebase sync.
 
+**This is a pure Expo Go app - no native building required!**
+
 ---
 
 ## 📱 Features
@@ -12,12 +14,13 @@ A fully-functional React Native version of the LOKI web application with Google 
 - ✅ **User Profile** - View statistics and account settings
 - ✅ **Real-Time Sync** - Same data works on web and mobile
 - ✅ **Zero Backend Changes** - Uses your existing Firebase infrastructure
+- ✅ **Expo Go Compatible** - Works with Expo Go app, no native build needed
 
 ---
 
-## 🚀 Quick Start (20 Minutes)
+## 🚀 Quick Start (10 Minutes)
 
-Follow these 7 steps EXACTLY in order to get the app running on your device.
+Follow these 5 steps EXACTLY in order to get the app running on your phone with Expo Go.
 
 ---
 
@@ -43,7 +46,7 @@ npm install
 
 ---
 
-### STEP 2: Configure Environment Variables (3 minutes)
+### STEP 2: Configure Environment Variables (2 minutes)
 
 **Open the `.env` file in your project folder** (it's in the main loki-app-v1 folder).
 
@@ -67,65 +70,14 @@ API_BASE_URL=https://loki-bc0bb.web.app/api
 
 ---
 
-### STEP 3: Generate Native Files FIRST (3 minutes)
-
-**IMPORTANT: Do this step BEFORE downloading Firebase config files!**
-
-**In your terminal (make sure you're still in the loki-app-v1 folder), type:**
-
-```bash
-npx expo prebuild --platform android
-```
-
-**Wait for this to complete** (this creates the android/ folder). You'll see "Success" when it's done.
-
-**If you want iOS support (Mac only), also type:**
-```bash
-npx expo prebuild --platform ios
-```
-
-**✅ DONE WHEN**: You now see an `android` folder in your project directory.
-
----
-
-### STEP 4: Download Firebase Config Files (5 minutes)
+### STEP 3: Enable Google Sign-In in Firebase (3 minutes)
 
 **Go to Firebase Console:**
 1. Open your web browser
 2. Go to https://console.firebase.google.com/
 3. Click on your project: `loki-bc0bb`
 
-**Download the Android config file:**
-1. Click the **gear icon** (Project Settings) in the top-left
-2. Scroll down to "Your apps" section
-3. Click on the **Android app** icon (looks like a robot)
-4. **IF the app already exists**: Click on it, then scroll down and click "Download google-services.json"
-5. **IF the app doesn't exist**:
-   - Package name: Type `com.loki.app` (EXACTLY this)
-   - Nickname: Type `Loki App` (or whatever you want)
-   - Click "Register app"
-   - Click "Download google-services.json"
-6. **Save the downloaded file** to your computer
-
-**Move the file to the correct location:**
-1. Find the `google-services.json` file you just downloaded (probably in your Downloads folder)
-2. **Move it to**: `loki-app-v1/android/app/`
-   - This means: inside the `android` folder, then inside the `app` folder
-   - The file should be right next to `build.gradle`
-
-**✅ DONE WHEN**: The `google-services.json` file is inside `loki-app-v1/android/app/` folder.
-
-**For iOS (Mac only, skip if you don't have a Mac):**
-1. In Firebase Console, click the iOS app icon
-2. Bundle ID: `com.loki.app`
-3. Download `GoogleService-Info.plist`
-4. Move it to `loki-app-v1/ios/` folder
-
----
-
-### STEP 5: Enable Google Sign-In in Firebase (3 minutes)
-
-**In Firebase Console (still open):**
+**Enable Google Sign-In:**
 1. Click "Authentication" in the left sidebar
 2. Click "Sign-in method" tab
 3. Click on the **Google** card
@@ -136,7 +88,7 @@ npx expo prebuild --platform ios
 
 ---
 
-### STEP 6: Start the App (2 minutes)
+### STEP 4: Start the App (2 minutes)
 
 **In your terminal (still in loki-app-v1 folder), type:**
 
@@ -146,33 +98,35 @@ npx expo start --clear
 
 **Wait for the Expo server to start** (you'll see a QR code appear).
 
-**Choose how to run the app:**
-
-**Option A: Use your phone (easiest)**
-1. Install "Expo Go" app from App Store (iPhone) or Google Play Store (Android)
-2. Open Expo Go on your phone
-3. Scan the QR code shown in your terminal with your phone camera
-4. The app will open on your phone
-
-**Option B: Use Android Emulator**
-1. Press the letter `a` on your keyboard
-2. Wait for the Android emulator to open
-
-**Option C: Use iOS Simulator (Mac only)**
-1. Press the letter `i` on your keyboard
-2. Wait for the iOS simulator to open
-
-**✅ DONE WHEN**: You see the LOKI app running on your device/simulator.
+**✅ DONE WHEN**: You see a QR code in your terminal.
 
 ---
 
-### STEP 7: Test the App (2 minutes)
+### STEP 5: Run on Your Phone with Expo Go (1 minute)
+
+**Use your phone (this is the easiest way):**
+
+1. **Install Expo Go**:
+   - iPhone: Download "Expo Go" from App Store
+   - Android: Download "Expo Go" from Google Play Store
+
+2. **Scan the QR Code**:
+   - Open Expo Go on your phone
+   - Tap "Scan QR code"
+   - Scan the QR code shown in your terminal
+   - The app will open on your phone
+
+**✅ DONE WHEN**: You see the LOKI app running on your phone.
+
+---
+
+### STEP 6: Test the App (2 minutes)
 
 **Test these features one by one:**
 
 1. **Test Sign-In**:
    - Click the "Sign in with Google" button
-   - Complete the Google sign-in process
+   - Complete the Google sign-in process (opens in browser)
    - You should see your profile loaded
 
 2. **Test Browse**:
@@ -195,7 +149,7 @@ npx expo start --clear
 
 ## 🎉 CONGRATULATIONS!
 
-Your LOKI mobile app is now running! You can demo it at your pitch night.
+Your LOKI mobile app is now running on your phone with Expo Go! No native building required.
 
 ---
 
@@ -222,14 +176,12 @@ Make sure you have these BEFORE you start:
 
 ## 🔍 Troubleshooting (If Something Goes Wrong)
 
-### Problem: "Can't find android/app directory"
-**Solution**: You skipped STEP 3. Go back and run `npx expo prebuild --platform android` FIRST, then move the config file.
-
-### Problem: "Google Sign-In fails"
+### Problem: "Google Sign-In fails or doesn't open"
 **Solution**:
-1. Make sure `google-services.json` is in `android/app/` folder (not just `android/`)
-2. Make sure Google Sign-In is enabled in Firebase Console
-3. Make sure package name is `com.loki.app` (case-sensitive)
+1. Make sure Google Sign-In is enabled in Firebase Console
+2. Check that `.env` file has correct Firebase configuration
+3. Make sure you have internet connection
+4. Try signing out and signing in again
 
 ### Problem: "Places not loading"
 **Solution**:
@@ -253,7 +205,14 @@ Make sure you have these BEFORE you start:
 **Solution**:
 1. Make sure your phone and computer are on the same WiFi network
 2. Try using your phone's camera app instead of Expo Go
-3. Or use Android emulator/iOS simulator instead
+3. Make sure Expo Go is up to date
+
+### Problem: "App crashes on phone"
+**Solution**:
+1. Shake your phone to open Expo Go menu
+2. Tap "Reload" to reload the app
+3. Check the terminal for error messages
+4. Make sure all environment variables are set correctly
 
 ---
 
@@ -261,8 +220,6 @@ Make sure you have these BEFORE you start:
 
 ```
 loki-app-v1/
-├── android/              # Android native code (created after prebuild)
-├── ios/                  # iOS native code (created after prebuild, Mac only)
 ├── app/
 │   ├── auth/            # Login screen
 │   └── main/            # Main screens (Browse, Maps, Collections, Profile)
@@ -279,20 +236,21 @@ loki-app-v1/
 
 ## 🎪 For Your Pitch Night Demo
 
-**Minimum Setup Time**: 20 minutes
+**Minimum Setup Time**: 10 minutes
 
 **What You Can Demo**:
-- ✅ Google Sign-In authentication
+- ✅ Google Sign-In authentication (browser-based)
 - ✅ Browse and search places
 - ✅ Create collections
 - ✅ View profile and statistics
 - ✅ Real-time data sync with web app
 
 **Demo Tips**:
-- Use your phone with Expo Go (looks more professional)
+- Use your phone with Expo Go (looks professional)
 - Have your WiFi ready
 - Test the app before your presentation
-- Focus on the core features (don't worry about Maps placeholder)
+- Focus on the core features (Maps is a placeholder)
+- Google Sign-In will open in a browser window - this is normal
 
 ---
 
@@ -300,7 +258,7 @@ loki-app-v1/
 
 1. **Re-read the steps** - Make sure you did them in order
 2. **Check the terminal** - Look for error messages
-3. **Check the file locations** - Make sure files are in the exact folders specified
+3. **Check your phone** - Make sure Expo Go can connect to your computer
 4. **Try restarting** - Close terminal, open new one, try again
 5. **Check Firebase Console** - Make sure all settings are correct
 
@@ -310,18 +268,28 @@ loki-app-v1/
 
 Before your pitch night, verify:
 
-- [ ] You can sign in with Google
+- [ ] You can sign in with Google (opens in browser)
 - [ ] Places load in Browse screen
 - [ ] Search works
 - [ ] You can create collections
 - [ ] Profile shows your info
-- [ ] App runs smoothly on your device
+- [ ] App runs smoothly on your phone via Expo Go
 - [ ] No error messages in terminal
 
 **If all checked, you're ready! 🚀**
 
 ---
 
-**Total Setup Time**: 20 minutes
+## 📝 Important Notes
+
+- **This is a pure Expo Go app** - no android/ or ios/ folders needed
+- **Google Sign-In uses browser popup** - this is normal for Expo Go
+- **No native configuration files needed** - just the .env file
+- **Works on both iOS and Android** via Expo Go
+- **Real-time Firebase sync** works out of the box
+
+---
+
+**Total Setup Time**: 10 minutes
 **Difficulty**: Very Easy (follow steps exactly)
-**Result**: Fully functional LOKI mobile app
+**Result**: Fully functional LOKI mobile app running on your phone

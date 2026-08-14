@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { firebaseAuth } from '../lib/firebase';
+import { auth } from '../lib/firebase';
 
 const API_BASE_URL = process.env.API_BASE_URL || 'https://loki-bc0bb.web.app/api';
 
@@ -18,7 +18,7 @@ class ApiClient {
     // Request interceptor to add auth token
     this.client.interceptors.request.use(async (config) => {
       try {
-        const user = firebaseAuth().currentUser;
+        const user = auth.currentUser;
         if (user) {
           const token = await user.getIdToken();
           config.headers.Authorization = `Bearer ${token}`;

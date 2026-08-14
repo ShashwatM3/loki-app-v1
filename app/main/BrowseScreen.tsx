@@ -4,130 +4,230 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TextInput,
-  Image,
   TouchableOpacity,
+  Image,
+  TextInput,
   FlatList,
+  Dimensions,
 } from 'react-native';
-import { Searchbar, Chip } from 'react-native-paper';
+import { Searchbar, Card, Chip, FAB } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useCounterStore } from '../../lib/store';
-import { getFirstName, getTimeGreeting } from '../../lib/utils';
+import { BROWSE_VIBES, getBrowseVibeById, placeMatchesBrowseVibe } from '../../lib/browseVibes';
+import { EXPLORE_GROUPS } from '../../lib/categories';
 import type { Place } from '../../lib/types';
 
-export default function BrowseScreen() {
+const { width } = Dimensions.get('window');
+
+export default function BrowseScreen({ navigation }: any) {
   const places = useCounterStore((state) => state.places);
   const userData = useCounterStore((state) => state.userData);
-  const fetchPlaces = useCounterStore((state) => state.fetchPlaces);
-  
+  const [greeting, setGreeting] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredPlaces, setFilteredPlaces] = useState<Place[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedVibe, setSelectedVibe] = useState<string | null>(null);
+  const [searchExpanded, setSearchExpanded] = useState(false);
 
   useEffect(() => {
-    fetchPlaces();
-  }, [fetchPlaces]);
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting('Good morning');
+    else if (hour < 17) setGreeting('Good afternoon');
+    else setGreeting('Good evening');
+  }, []);
 
   useEffect(() => {
-    let filtered = places;
-
-    // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(place =>
-        place.name.toLowerCase().includes(query) ||
-        place.category.toLowerCase().includes(query) ||
-        place.location?.toLowerCase().includes(query) ||
-        place.tags?.some(tag => tag.toLowerCase().includes(query))
-      );
+      const filtered = places.filter((place) => {
+        return (
+          place.name.toLowerCase().includes(query) ||
+          place.category.toLowerCase().includes(query) ||
+          place.tags.some((tag) => tag.toLowerCase().includes(query)) ||
+          (place.description && place.description.toLowerCase().includes(query)) ||
+          (place.location && place.location.toLowerCase().includes(query))
+        );
+      });
+      setFilteredPlaces(filtered);
+    } else if (selectedVibe) {
+      const vibe = getBrowseVibeById(selectedVibe);
+      if (vibe) {
+        const filtered = places.filter((place) => placeMatchesBrowseVibe(place, vibe));
+        setFilteredPlaces(filtered);
+      }
+    } else {
+      setFilteredPlaces(places);
     }
+  }, [searchQuery, selectedVibe, places]);
 
-    // Filter by category
-    if (selectedCategory) {
-      filtered = filtered.filter(place => place.category === selectedCategory);
-    }
+  const handleVibePress = (vibeId: string) => {
+    setSelectedVibe(vibeId === selectedVibe ? null : vibeId);
+  };
 
-    setFilteredPlaces(filtered);
-  }, [places, searchQuery, selectedCategory]);
+  const handlePlacePress = (place: Place) => {
+    navigation.navigate('PlaceDetail', { place });
+  };
 
-  const categories = Array.from(new Set(places.map(p => p.category)));
+  const handleAskLoki = () => {
+    navigation.navigate('AIChatbot');
+  };
 
-  const renderPlaceCard = ({ item }: { item: Place }) => (
-    <TouchableOpacity style={styles.placeCard}>
-      <Image source={{ uri: item.image || 'https://via.placeholder.com/300' }} style={styles.placeImage} />
-      <View style={styles.placeInfo}>
-        <Text style={styles.placeCategory}>{item.category}</Text>
-        <Text style={styles.placeName}>{item.name}</Text>
-        {item.description && (
-          <Text style={styles.placeDescription} numberOfLines={2}>
-            {item.description}
-          </Text>
-        )}
-        <View style={styles.placeMeta}>
-          {item.rating > 0 && (
-            <View style={styles.ratingContainer}>
-              <Icon name="star" size={14} color="#fbbf24" />
-              <Text style={styles.ratingText}>{item.rating.toFixed(1)}</Text>
-            </View>
-          )}
-          {item.popup && (
-            <Chip mode="flat" compact style={styles.popupChip}>Popup</Chip>
-          )}
-        </View>
+  const renderVibeCard = ({ item }: { item: any }) => (
+    <TouchableOpacity
+      style={styles.vibeCard}
+      onPress={() => handleVibePress(item.id)}
+      activeOpacity={0.7}
+    >
+      <Image source={{ uri: item.bannerImage }} style={styles.vibeBanner} />
+      <View style={styles.vibeOverlay}>
+        <Text style={styles.vibeEmoji}>{item.emoji}</Text>
+        <Text style={styles.vibeLabel}>{item.label}</Text>
+        {item.blurb && <Text style={styles.vibeBlurb}>{item.blurb}</Text>}
       </View>
     </TouchableOpacity>
+  );
+
+  const renderPlaceCard = ({ item }: { item: Place }) => (
+    <Card style={styles.placeCard} onPress={() => handlePlacePress(item)}>
+      <Card.Cover source={{ uri: item.image }} style={styles.placeImage} />
+      <Card.Content style={styles.placeContent}>
+        <Text style={styles.placeName} numberOfLines={1}>
+          {item.name}
+        </Text>
+        <Text style={styles.placeCategory} numberOfLines={1}>
+          {item.category}
+        </Text>
+        <View style={styles.placeMeta}>
+          <View style={styles.ratingContainer}>
+            <Icon name="star" size={14} color="#FFA500" />
+            <Text style={styles.rating}>{item.rating}</Text>
+          </View>
+          {item.budget && (
+            <Chip mode="flat" compact style={styles.budgetChip}>
+              {item.budget}
+            </Chip>
+          )}
+        </View>
+      </Card.Content>
+    </Card>
+  );
+
+  const renderExploreGroup = ({ item }: { item: any }) => (
+    <View style={styles.exploreGroup}>
+      <Text style={styles.exploreGroupLabel}>
+        {item.emoji} {item.label}
+      </Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <View style={styles.subfilterContainer}>
+          {item.subfilters.map((subfilter: any, index: number) => (
+            <Chip
+              key={index}
+              mode="outlined"
+              style={styles.subfilterChip}
+              onPress={() => {
+                setSearchQuery(subfilter.keywords[0]);
+                setSearchExpanded(true);
+              }}
+            >
+              {subfilter.emoji} {subfilter.label}
+            </Chip>
+          ))}
+        </View>
+      </ScrollView>
+    </View>
   );
 
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
+        {/* Header with greeting */}
         <View style={styles.header}>
-          <Text style={styles.greeting}>
-            {getTimeGreeting()}, {getFirstName(userData.name) || 'Welcome'}
-          </Text>
-          <Text style={styles.subtitle}>What are you looking for today?</Text>
+          <Text style={styles.greeting}>{greeting}, {userData.name?.split(' ')[0] || 'there'}!</Text>
+          <Text style={styles.subtitle}>What are you in the mood for?</Text>
         </View>
+
+        {/* Ask Loki AI Chatbot */}
+        <TouchableOpacity style={styles.askLokiButton} onPress={handleAskLoki}>
+          <View style={styles.askLokiContent}>
+            <Icon name="robot" size={24} color="#6366f1" />
+            <View style={styles.askLokiText}>
+              <Text style={styles.askLokiTitle}>Ask Loki</Text>
+              <Text style={styles.askLokiSubtitle}>Get personalized recommendations</Text>
+            </View>
+            <Icon name="chevron-right" size={24} color="#9ca3af" />
+          </View>
+        </TouchableOpacity>
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <Searchbar
-            placeholder="Search places..."
-            onChangeText={setSearchQuery}
-            value={searchQuery}
-            style={styles.searchBar}
-          />
+          {searchExpanded ? (
+            <Searchbar
+              placeholder="Search places, categories, vibes..."
+              onChangeText={setSearchQuery}
+              value={searchQuery}
+              style={styles.searchBar}
+              autoFocus
+              onIconPress={() => {
+                setSearchExpanded(false);
+                setSearchQuery('');
+              }}
+            />
+          ) : (
+            <TouchableOpacity
+              style={styles.searchCollapsed}
+              onPress={() => setSearchExpanded(true)}
+            >
+              <Icon name="magnify" size={24} color="#9ca3af" />
+              <Text style={styles.searchPlaceholder}>Search places...</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
-        {/* Categories */}
-        <View style={styles.categoriesContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <TouchableOpacity
-              style={[styles.categoryChip, !selectedCategory && styles.categoryChipActive]}
-              onPress={() => setSelectedCategory(null)}
-            >
-              <Text style={[styles.categoryChipText, !selectedCategory && styles.categoryChipTextActive]}>
-                All
+        {/* Curated Vibes */}
+        {!searchQuery && !selectedVibe && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Curated for you</Text>
+            <FlatList
+              data={BROWSE_VIBES}
+              renderItem={renderVibeCard}
+              keyExtractor={(item) => item.id}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.vibeList}
+            />
+          </View>
+        )}
+
+        {/* Explore Section */}
+        {!searchQuery && !selectedVibe && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Explore</Text>
+            <FlatList
+              data={EXPLORE_GROUPS}
+              renderItem={renderExploreGroup}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+            />
+          </View>
+        )}
+
+        {/* Selected Vibe Header */}
+        {selectedVibe && (
+          <View style={styles.section}>
+            <TouchableOpacity onPress={() => setSelectedVibe(null)}>
+              <Text style={styles.backButton}>
+                <Icon name="arrow-left" size={16} /> Back to all vibes
               </Text>
             </TouchableOpacity>
-            {categories.map(category => (
-              <TouchableOpacity
-                key={category}
-                style={[styles.categoryChip, selectedCategory === category && styles.categoryChipActive]}
-                onPress={() => setSelectedCategory(category)}
-              >
-                <Text style={[styles.categoryChipText, selectedCategory === category && styles.categoryChipTextActive]}>
-                  {category}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+            <VibeHeader vibeId={selectedVibe} />
+          </View>
+        )}
 
         {/* Places Grid */}
-        <View style={styles.placesContainer}>
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            {searchQuery ? 'Search Results' : 'Explore Places'} ({filteredPlaces.length})
+            {selectedVibe ? 'Places' : searchQuery ? 'Search Results' : 'All Places'}
+            {' '}
+            ({filteredPlaces.length})
           </Text>
           {filteredPlaces.length > 0 ? (
             <FlatList
@@ -136,17 +236,56 @@ export default function BrowseScreen() {
               keyExtractor={(item) => item.id}
               numColumns={2}
               scrollEnabled={false}
-              columnWrapperStyle={styles.placesRow}
+              columnWrapperStyle={styles.placeRow}
+              contentContainerStyle={styles.placesList}
             />
           ) : (
-            <View style={styles.emptyContainer}>
-              <Icon name="map-search" size={48} color="#9ca3af" />
+            <View style={styles.emptyState}>
+              <Icon name="map-marker-off" size={48} color="#9ca3af" />
               <Text style={styles.emptyText}>No places found</Text>
               <Text style={styles.emptySubtext}>Try adjusting your search or filters</Text>
             </View>
           )}
         </View>
+
+        {/* Quick Access */}
+        {!searchQuery && !selectedVibe && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Quick Access</Text>
+            <View style={styles.quickAccessGrid}>
+              <TouchableOpacity
+                style={styles.quickAccessButton}
+                onPress={() => navigation.navigate('Maps')}
+              >
+                <Icon name="map" size={24} color="#6366f1" />
+                <Text style={styles.quickAccessLabel}>Map</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.quickAccessButton}
+                onPress={() => navigation.navigate('Collections')}
+              >
+                <Icon name="book" size={24} color="#6366f1" />
+                <Text style={styles.quickAccessLabel}>Collections</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
       </ScrollView>
+    </View>
+  );
+}
+
+function VibeHeader({ vibeId }: { vibeId: string }) {
+  const vibe = getBrowseVibeById(vibeId);
+  if (!vibe) return null;
+
+  return (
+    <View style={styles.vibeHeader}>
+      <Text style={styles.vibeHeaderEmoji}>{vibe.emoji}</Text>
+      <View>
+        <Text style={styles.vibeHeaderLabel}>{vibe.label}</Text>
+        {vibe.blurb && <Text style={styles.vibeHeaderBlurb}>{vibe.blurb}</Text>}
+      </View>
     </View>
   );
 }
@@ -161,99 +300,183 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
-    paddingTop: 40,
+    paddingTop: 60,
+    backgroundColor: '#ffffff',
   },
   greeting: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#111827',
   },
   subtitle: {
+    fontSize: 16,
+    color: '#6b7280',
+    marginTop: 4,
+  },
+  askLokiButton: {
+    margin: 20,
+    marginTop: 0,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  askLokiContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  askLokiText: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  askLokiTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  askLokiSubtitle: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginTop: 2,
+  },
+  searchContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  searchBar: {
+    elevation: 0,
+    backgroundColor: '#f3f4f6',
+  },
+  searchCollapsed: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f3f4f6',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  searchPlaceholder: {
+    marginLeft: 12,
+    color: '#9ca3af',
+    fontSize: 16,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#111827',
+    paddingHorizontal: 20,
+    marginBottom: 12,
+  },
+  vibeList: {
+    paddingHorizontal: 20,
+  },
+  vibeCard: {
+    width: 200,
+    height: 280,
+    marginRight: 12,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#ffffff',
+  },
+  vibeBanner: {
+    width: '100%',
+    height: '100%',
+  },
+  vibeOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 16,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+  },
+  vibeEmoji: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  vibeLabel: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 4,
+  },
+  vibeBlurb: {
+    fontSize: 12,
+    color: '#e5e7eb',
+  },
+  exploreGroup: {
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  exploreGroupLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 8,
+  },
+  subfilterContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  subfilterChip: {
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  backButton: {
+    color: '#6366f1',
+    fontSize: 14,
+    marginBottom: 12,
+    paddingHorizontal: 20,
+  },
+  vibeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  vibeHeaderEmoji: {
+    fontSize: 48,
+    marginRight: 16,
+  },
+  vibeHeaderLabel: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  vibeHeaderBlurb: {
     fontSize: 14,
     color: '#6b7280',
     marginTop: 4,
   },
-  searchContainer: {
+  placesList: {
     paddingHorizontal: 20,
-    marginBottom: 16,
+    paddingBottom: 20,
   },
-  searchBar: {
-    elevation: 2,
-    backgroundColor: '#ffffff',
-  },
-  categoriesContainer: {
-    marginBottom: 20,
-    paddingHorizontal: 20,
-  },
-  categoryChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#ffffff',
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  categoryChipActive: {
-    backgroundColor: '#6366f1',
-    borderColor: '#6366f1',
-  },
-  categoryChipText: {
-    color: '#6b7280',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  categoryChipTextActive: {
-    color: '#ffffff',
-  },
-  placesContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 100,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginBottom: 16,
-  },
-  placesRow: {
+  placeRow: {
     justifyContent: 'space-between',
   },
   placeCard: {
-    width: '48%',
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
+    width: (width - 60) / 2,
     marginBottom: 16,
     elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
   placeImage: {
-    width: '100%',
     height: 120,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-    backgroundColor: '#f3f4f6',
   },
-  placeInfo: {
+  placeContent: {
     padding: 12,
-  },
-  placeCategory: {
-    fontSize: 10,
-    color: '#6b7280',
-    textTransform: 'uppercase',
-    fontWeight: '600',
-    marginBottom: 4,
   },
   placeName: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: '#111827',
     marginBottom: 4,
   },
-  placeDescription: {
+  placeCategory: {
     fontSize: 12,
     color: '#6b7280',
     marginBottom: 8,
@@ -267,29 +490,48 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  ratingText: {
+  rating: {
     fontSize: 12,
     color: '#6b7280',
     marginLeft: 4,
   },
-  popupChip: {
-    height: 20,
-    backgroundColor: '#ec4899',
+  budgetChip: {
+    height: 24,
   },
-  emptyContainer: {
+  emptyState: {
     alignItems: 'center',
-    justifyContent: 'center',
     paddingVertical: 40,
+    paddingHorizontal: 20,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
-    color: '#6b7280',
-    marginTop: 12,
+    color: '#111827',
+    marginTop: 16,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#9ca3af',
+    color: '#6b7280',
     marginTop: 4,
+  },
+  quickAccessGrid: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    justifyContent: 'space-around',
+  },
+  quickAccessButton: {
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    width: (width - 60) / 2,
+  },
+  quickAccessLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#111827',
+    marginTop: 8,
   },
 });

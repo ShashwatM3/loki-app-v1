@@ -5,211 +5,231 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
-  Modal,
+  FlatList,
   TextInput,
+  Modal,
   Alert,
+  Share,
+  Dimensions,
 } from 'react-native';
 import {
+  Card,
   Button,
   FAB,
   Portal,
   Dialog,
-  TextInput as PaperInput,
+  Paragraph,
 } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
 import { useCounterStore } from '../../lib/store';
-import { getRandomGradient } from '../../lib/utils';
-import type { CollectionType } from '../../lib/types';
+import { encrypt } from '../../lib/crypto';
+import type { CollectionType, Place } from '../../lib/types';
+import { apiClient } from '../../services/apiClient';
 
-export default function CollectionsScreen() {
+const { width } = Dimensions.get('window');
+
+export default function CollectionsScreen({ navigation }: any) {
   const userData = useCounterStore((state) => state.userData);
-  const refreshUserData = useCounterStore((state) => state.refreshUserData);
-  
-  const [modalVisible, setModalVisible] = useState(false);
+  const setUserData = useCounterStore((state) => state.setUserData);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState('');
   const [selectedCollection, setSelectedCollection] = useState<CollectionType | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const gradients = [
+    'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+    'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+    'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+    'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+  ];
+
   const handleCreateCollection = async () => {
-    if (!newCollectionName.trim() || !userData.email) return;
+    if (!newCollectionName.trim()) {
+      Alert.alert('Error', 'Please enter a collection name');
+      return;
+    }
 
     setLoading(true);
     try {
+      const gradient = gradients[Math.floor(Math.random() * gradients.length)];
       const newCollection: CollectionType = {
         name: newCollectionName.trim(),
-        type: "personal",
+        type: 'personal',
+        gradient,
         places: [],
-        gradient: getRandomGradient(),
-        collaborators: [],
-        createdBy: userData.email,
         ownerEmail: userData.email,
-        access: "edit"
+        createdBy: userData.email,
+        access: 'edit',
       };
 
-      const userRef = doc(db, "users", userData.email);
-      await updateDoc(userRef, {
-        collections: arrayUnion(newCollection)
-      });
+      const updatedCollections = [...userData.collections, newCollection];
+      const updatedUserData = { ...userData, collections: updatedCollections };
+      
+      // Update local state
+      setUserData(updatedUserData);
+      
+      // Update Firestore
+      const { db } = require('../../lib/firebase');
+      const { doc, updateDoc } = require('firebase/firestore');
+      const userDocRef = doc(db, 'users', userData.email);
+      await updateDoc(userDocRef, { collections: updatedCollections });
 
-      await refreshUserData();
-      setModalVisible(false);
+      setShowCreateDialog(false);
       setNewCollectionName('');
     } catch (error) {
-      console.error('Error creating collection:', error);
       Alert.alert('Error', 'Failed to create collection');
+      console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleDeleteCollection = async (collectionId: string) => {
+    Alert.alert(
+      'Delete Collection',
+      'Are you sure you want to delete this collection?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const updatedCollections = userData.collections.filter(
+                (c) => c.id !== collectionId
+              );
+              const updatedUserData = { ...userData, collections: updatedCollections };
+              
+              setUserData(updatedUserData);
+              
+              // Update Firestore
+              const { db } = require('../../lib/firebase');
+              const { doc, updateDoc } = require('firebase/firestore');
+              const userDocRef = doc(db, 'users', userData.email);
+              await updateDoc(userDocRef, { collections: updatedCollections });
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete collection');
+              console.error(error);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleShareCollection = async (collection: CollectionType) => {
+    try {
+      const token = await encrypt(userData.email, collection.name);
+      const shareLink = `https://loki-bc0bb.web.app/collection/${token}`;
+      
+      await Share.share({
+        message: `Check out my collection "${collection.name}" on Loki! ${shareLink}`,
+        url: shareLink,
+      });
+    } catch (error) {
+      Alert.alert('Error', 'Failed to share collection');
+      console.error(error);
+    }
+  };
+
   const handleCollectionPress = (collection: CollectionType) => {
     setSelectedCollection(collection);
+    navigation.navigate('CollectionDetail', { collection });
   };
+
+  const renderCollectionCard = ({ item }: { item: CollectionType }) => (
+    <TouchableOpacity onPress={() => handleCollectionPress(item)}>
+      <Card style={styles.collectionCard}>
+        <Card.Content style={styles.collectionContent}>
+          <View style={[styles.collectionGradient, { backgroundColor: item.gradient }]}>
+            <Text style={styles.collectionEmoji}>📚</Text>
+            <Text style={styles.collectionCount}>{item.places.length}</Text>
+          </View>
+          <View style={styles.collectionInfo}>
+            <Text style={styles.collectionName} numberOfLines={1}>
+              {item.name}
+            </Text>
+            <Text style={styles.collectionType}>
+              {item.type === 'personal' ? 'Personal' : 'Shared'}
+            </Text>
+          </View>
+          <View style={styles.collectionActions}>
+            <TouchableOpacity
+              onPress={() => handleShareCollection(item)}
+              style={styles.actionButton}
+            >
+              <Icon name="share-variant" size={20} color="#6366f1" />
+            </TouchableOpacity>
+            {item.type === 'personal' && (
+              <TouchableOpacity
+                onPress={() => handleDeleteCollection(item.id!)}
+                style={styles.actionButton}
+              >
+                <Icon name="delete" size={20} color="#ef4444" />
+              </TouchableOpacity>
+            )}
+          </View>
+        </Card.Content>
+      </Card>
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>My Collections</Text>
+          <Text style={styles.title}>Collections</Text>
           <Text style={styles.subtitle}>
-            {userData.collections.length} {userData.collections.length === 1 ? 'collection' : 'collections'}
+            {userData.collections.length} collection{userData.collections.length !== 1 ? 's' : ''}
           </Text>
         </View>
 
-        {/* Collections Grid */}
-        {userData.collections.length > 0 ? (
-          <View style={styles.collectionsGrid}>
-            {userData.collections.map((collection, index) => (
-              <TouchableOpacity
-                key={collection.id || index}
-                style={styles.collectionCard}
-                onPress={() => handleCollectionPress(collection)}
-              >
-                <View style={[styles.collectionGradient, { backgroundColor: collection.gradient }]}>
-                  <View style={styles.collectionOverlay}>
-                    <Icon name="book-open-variant" size={32} color="#ffffff" />
-                    <Text style={styles.collectionCount}>{collection.places.length}</Text>
-                  </View>
-                </View>
-                <View style={styles.collectionInfo}>
-                  <Text style={styles.collectionName}>{collection.name}</Text>
-                  <Text style={styles.collectionMeta}>
-                    {collection.places.length} {collection.places.length === 1 ? 'place' : 'places'}
-                  </Text>
-                  {collection.type === 'shared' && (
-                    <View style={styles.sharedBadge}>
-                      <Icon name="account-group" size={12} color="#6366f1" />
-                      <Text style={styles.sharedText}>Shared</Text>
-                    </View>
-                  )}
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        ) : (
-          <View style={styles.emptyContainer}>
-            <Icon name="book-open-page-variant" size={64} color="#9ca3af" />
+        {userData.collections.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Icon name="book-open-variant" size={64} color="#9ca3af" />
             <Text style={styles.emptyTitle}>No collections yet</Text>
             <Text style={styles.emptySubtitle}>
               Create your first collection to start saving places
             </Text>
           </View>
+        ) : (
+          <FlatList
+            data={userData.collections}
+            renderItem={renderCollectionCard}
+            keyExtractor={(item) => item.id || item.name}
+            scrollEnabled={false}
+            contentContainerStyle={styles.collectionsList}
+          />
         )}
       </ScrollView>
 
-      {/* Floating Action Button */}
       <FAB
         style={styles.fab}
         icon="plus"
-        onPress={() => setModalVisible(true)}
-        label="New Collection"
+        onPress={() => setShowCreateDialog(true)}
       />
 
-      {/* Create Collection Modal */}
       <Portal>
-        <Dialog
-          visible={modalVisible}
-          onDismiss={() => setModalVisible(false)}
-          style={styles.dialog}
-        >
-          <Dialog.Title>Create New Collection</Dialog.Title>
+        <Dialog visible={showCreateDialog} onDismiss={() => setShowCreateDialog(false)}>
+          <Dialog.Title>Create Collection</Dialog.Title>
           <Dialog.Content>
-            <PaperInput
-              label="Collection Name"
+            <TextInput
+              placeholder="Collection name"
               value={newCollectionName}
               onChangeText={setNewCollectionName}
-              mode="outlined"
+              style={styles.input}
               autoFocus
             />
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={() => setModalVisible(false)}>Cancel</Button>
-            <Button
-              onPress={handleCreateCollection}
-              loading={loading}
-              disabled={!newCollectionName.trim() || loading}
-            >
+            <Button onPress={() => setShowCreateDialog(false)}>Cancel</Button>
+            <Button onPress={handleCreateCollection} loading={loading}>
               Create
             </Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>
-
-      {/* Collection Detail Modal */}
-      <Modal
-        visible={!!selectedCollection}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setSelectedCollection(null)}
-      >
-        {selectedCollection && (
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <View style={[styles.modalGradient, { backgroundColor: selectedCollection.gradient }]}>
-                  <Icon name="book-open-variant" size={40} color="#ffffff" />
-                </View>
-                <TouchableOpacity onPress={() => setSelectedCollection(null)}>
-                  <Icon name="close" size={24} color="#6b7280" />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.modalBody}>
-                <Text style={styles.modalTitle}>{selectedCollection.name}</Text>
-                <Text style={styles.modalMeta}>
-                  {selectedCollection.places.length} {selectedCollection.places.length === 1 ? 'place' : 'places'}
-                </Text>
-
-                {selectedCollection.places.length > 0 ? (
-                  <ScrollView style={styles.placesList}>
-                    {selectedCollection.places.map((place, index) => (
-                      <View key={index} style={styles.placeItem}>
-                        <Image
-                          source={{ uri: place.image || 'https://via.placeholder.com/100' }}
-                          style={styles.placeImage}
-                        />
-                        <View style={styles.placeInfo}>
-                          <Text style={styles.placeName}>{place.name}</Text>
-                          <Text style={styles.placeCategory}>{place.category}</Text>
-                        </View>
-                      </View>
-                    ))}
-                  </ScrollView>
-                ) : (
-                  <View style={styles.emptyCollection}>
-                    <Icon name="map-marker-off" size={48} color="#9ca3af" />
-                    <Text style={styles.emptyCollectionText}>No places in this collection</Text>
-                  </View>
-                )}
-              </View>
-            </View>
-          </View>
-        )}
-      </Modal>
     </View>
   );
 }
@@ -224,183 +244,96 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
-    paddingTop: 40,
+    paddingTop: 60,
+    backgroundColor: '#ffffff',
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#111827',
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#6b7280',
     marginTop: 4,
   },
-  collectionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    padding: 16,
-    justifyContent: 'space-between',
+  collectionsList: {
+    padding: 20,
   },
   collectionCard: {
-    width: '48%',
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
     marginBottom: 16,
     elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+  },
+  collectionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
   },
   collectionGradient: {
-    height: 100,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    width: 60,
+    height: 60,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 16,
   },
-  collectionOverlay: {
-    alignItems: 'center',
+  collectionEmoji: {
+    fontSize: 24,
   },
   collectionCount: {
-    color: '#ffffff',
-    fontSize: 24,
+    fontSize: 12,
     fontWeight: 'bold',
+    color: '#ffffff',
     marginTop: 4,
   },
   collectionInfo: {
-    padding: 12,
+    flex: 1,
   },
   collectionName: {
-    fontSize: 14,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '600',
     color: '#111827',
-    marginBottom: 4,
   },
-  collectionMeta: {
-    fontSize: 12,
-    color: '#6b7280',
-  },
-  sharedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    backgroundColor: '#e0e7ff',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-  },
-  sharedText: {
-    fontSize: 10,
-    color: '#6366f1',
-    marginLeft: 4,
-    fontWeight: '500',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#6b7280',
-    marginTop: 16,
-  },
-  emptySubtitle: {
+  collectionType: {
     fontSize: 14,
-    color: '#9ca3af',
-    marginTop: 8,
-    textAlign: 'center',
-    paddingHorizontal: 40,
+    color: '#6b7280',
+    marginTop: 4,
+  },
+  collectionActions: {
+    flexDirection: 'row',
+  },
+  actionButton: {
+    marginLeft: 12,
+    padding: 8,
   },
   fab: {
     position: 'absolute',
     right: 20,
-    bottom: 24,
+    bottom: 20,
     backgroundColor: '#6366f1',
   },
-  dialog: {
-    borderRadius: 16,
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  modalContent: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    maxHeight: '80%',
-    overflow: 'hidden',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  emptyState: {
     alignItems: 'center',
-    padding: 20,
+    paddingVertical: 60,
+    paddingHorizontal: 40,
   },
-  modalGradient: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalBody: {
-    padding: 20,
-  },
-  modalTitle: {
+  emptyTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginBottom: 4,
-  },
-  modalMeta: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 16,
-  },
-  placesList: {
-    maxHeight: 300,
-  },
-  placeItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-  },
-  placeImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 8,
-    backgroundColor: '#f3f4f6',
-    marginRight: 12,
-  },
-  placeInfo: {
-    flex: 1,
-  },
-  placeName: {
-    fontSize: 14,
     fontWeight: '600',
     color: '#111827',
+    marginTop: 16,
   },
-  placeCategory: {
-    fontSize: 12,
-    color: '#6b7280',
-  },
-  emptyCollection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-  },
-  emptyCollectionText: {
+  emptySubtitle: {
     fontSize: 14,
-    color: '#9ca3af',
-    marginTop: 12,
+    color: '#6b7280',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 8,
   },
 });

@@ -5,177 +5,142 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
+  Image,
 } from 'react-native';
 import {
-  Avatar,
-  Button,
   Card,
-  List,
+  Button,
   Divider,
+  List,
+  Avatar,
 } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useCounterStore } from '../../lib/store';
 import authService from '../../services/authService';
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ navigation }: any) {
   const userData = useCounterStore((state) => state.userData);
   const setUserData = useCounterStore((state) => state.setUserData);
-  const setAuthLoading = useCounterStore((state) => state.setAuthLoading);
 
-  const handleSignOut = async () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await authService.signOut();
-              setUserData({
-                name: '',
-                email: '',
-                photo: '',
-                collections: []
-              });
-              setAuthLoading(false);
-            } catch (error) {
-              console.error('Error signing out:', error);
-              Alert.alert('Error', 'Failed to sign out');
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const totalPlaces = userData.collections.reduce(
+  const totalSavedPlaces = userData.collections.reduce(
     (sum, collection) => sum + collection.places.length,
     0
   );
 
-  const sharedCollections = userData.collections.filter(c => c.type === 'shared');
+  const handleSignOut = async () => {
+    try {
+      await authService.signOut();
+      setUserData({ name: '', email: '', photo: '', collections: [] });
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Profile Header */}
-        <View style={styles.header}>
-          <Avatar.Text
-            size={80}
-            label={userData.name ? userData.name.charAt(0).toUpperCase() : 'U'}
-            style={styles.avatar}
-            labelStyle={styles.avatarLabel}
-          />
-          <Text style={styles.name}>{userData.name}</Text>
-          <Text style={styles.email}>{userData.email}</Text>
-          
-          {userData.admin && (
-            <View style={styles.adminBadge}>
-              <Icon name="shield-account" size={14} color="#6366f1" />
-              <Text style={styles.adminText}>Admin</Text>
-            </View>
+    <ScrollView style={styles.container}>
+      {/* Profile Header */}
+      <View style={styles.header}>
+        <View style={styles.avatarContainer}>
+          {userData.photo ? (
+            <Image source={{ uri: userData.photo }} style={styles.avatar} />
+          ) : (
+            <Avatar.Text
+              size={80}
+              label={getInitials(userData.name || 'User')}
+              style={styles.avatar}
+            />
           )}
         </View>
+        <Text style={styles.name}>{userData.name}</Text>
+        <Text style={styles.email}>{userData.email}</Text>
+      </View>
 
-        {/* Stats Card */}
-        <Card style={styles.statsCard}>
-          <Card.Content>
-            <View style={styles.statsContainer}>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{userData.collections.length}</Text>
-                <Text style={styles.statLabel}>Collections</Text>
-              </View>
-              <Divider style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{totalPlaces}</Text>
-                <Text style={styles.statLabel}>Places</Text>
-              </View>
-              <Divider style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{sharedCollections.length}</Text>
-                <Text style={styles.statLabel}>Shared</Text>
-              </View>
-            </View>
-          </Card.Content>
+      {/* Statistics */}
+      <Card style={styles.statsCard}>
+        <Card.Content style={styles.statsContent}>
+          <View style={styles.statItem}>
+            <Icon name="map-marker" size={32} color="#6366f1" />
+            <Text style={styles.statNumber}>{totalSavedPlaces}</Text>
+            <Text style={styles.statLabel}>Places Saved</Text>
+          </View>
+          <Divider style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Icon name="book" size={32} color="#6366f1" />
+            <Text style={styles.statNumber}>{userData.collections.length}</Text>
+            <Text style={styles.statLabel}>Collections</Text>
+          </View>
+        </Card.Content>
+      </Card>
+
+      {/* Account Settings */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Account</Text>
+        <Card>
+          <List.Item
+            title="Help & Support"
+            description="Get help with the app"
+            left={(props) => <List.Icon {...props} icon="help-circle" />}
+            onPress={() => console.log('Help pressed')}
+          />
+          <Divider />
+          <List.Item
+            title="Suggest a Venue"
+            description="Add a new place to Loki"
+            left={(props) => <List.Icon {...props} icon="plus-circle" />}
+            onPress={() => console.log('Suggest venue pressed')}
+          />
         </Card>
+      </View>
 
-        {/* Settings Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Settings</Text>
-          
+      {/* Legal */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Legal</Text>
+        <Card>
           <List.Item
-            title="Edit Profile"
-            description="Update your profile information"
-            left={props => <List.Icon {...props} icon="account-edit" />}
-            right={props => <List.Icon {...props} icon="chevron-right" />}
-            onPress={() => console.log('Edit profile')}
+            title="Terms of Service"
+            left={(props) => <List.Icon {...props} icon="file-document" />}
+            onPress={() => console.log('Terms pressed')}
           />
-          
+          <Divider />
           <List.Item
-            title="Notifications"
-            description="Manage notification preferences"
-            left={props => <List.Icon {...props} icon="bell" />}
-            right={props => <List.Icon {...props} icon="chevron-right" />}
-            onPress={() => console.log('Notifications')}
+            title="Privacy Policy"
+            left={(props) => <List.Icon {...props} icon="shield-account" />}
+            onPress={() => console.log('Privacy pressed')}
           />
-          
-          <List.Item
-            title="Privacy"
-            description="Privacy and security settings"
-            left={props => <List.Icon {...props} icon="shield-lock" />}
-            right={props => <List.Icon {...props} icon="chevron-right" />}
-            onPress={() => console.log('Privacy')}
-          />
-        </View>
+        </Card>
+      </View>
 
-        {/* Support Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Support</Text>
-          
-          <List.Item
-            title="Help Center"
-            description="Get help and support"
-            left={props => <List.Icon {...props} icon="help-circle" />}
-            right={props => <List.Icon {...props} icon="chevron-right" />}
-            onPress={() => console.log('Help center')}
-          />
-          
-          <List.Item
-            title="About Loki"
-            description="App information and version"
-            left={props => <List.Icon {...props} icon="information" />}
-            right={props => <List.Icon {...props} icon="chevron-right" />}
-            onPress={() => console.log('About')}
-          />
-        </View>
+      {/* Sign Out */}
+      <View style={styles.section}>
+        <Button
+          mode="contained"
+          onPress={handleSignOut}
+          style={styles.signOutButton}
+          icon="logout"
+        >
+          Sign Out
+        </Button>
+      </View>
 
-        {/* Sign Out Button */}
-        <View style={styles.signOutContainer}>
-          <Button
-            mode="outlined"
-            onPress={handleSignOut}
-            icon="logout"
-            style={styles.signOutButton}
-            contentStyle={styles.signOutButtonContent}
-          >
-            Sign Out
-          </Button>
-        </View>
-
-        {/* Version Info */}
-        <View style={styles.versionContainer}>
-          <Text style={styles.versionText}>Loki App v1.0.0</Text>
-          <Text style={styles.versionSubtext}>Built with React Native & Expo</Text>
-        </View>
-      </ScrollView>
-    </View>
+      {/* Version Info */}
+      <View style={styles.footer}>
+        <Text style={styles.version}>Loki App v1.0.0</Text>
+        <Text style={styles.copyright}>© 2024 Loki</Text>
+      </View>
+    </ScrollView>
   );
 }
 
@@ -184,67 +149,50 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f9fafb',
   },
-  scrollView: {
-    flex: 1,
-  },
   header: {
     alignItems: 'center',
     padding: 20,
-    paddingTop: 40,
+    paddingTop: 60,
     backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  avatarContainer: {
     marginBottom: 16,
   },
   avatar: {
-    backgroundColor: '#6366f1',
-  },
-  avatarLabel: {
-    color: '#ffffff',
-    fontSize: 32,
-    fontWeight: 'bold',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
   name: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#111827',
-    marginTop: 12,
   },
   email: {
     fontSize: 14,
     color: '#6b7280',
     marginTop: 4,
   },
-  adminBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#e0e7ff',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginTop: 8,
-  },
-  adminText: {
-    fontSize: 12,
-    color: '#6366f1',
-    marginLeft: 4,
-    fontWeight: '500',
-  },
   statsCard: {
-    marginHorizontal: 16,
-    marginBottom: 16,
+    margin: 20,
+    marginTop: 20,
     elevation: 2,
   },
-  statsContainer: {
+  statsContent: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: 8,
+    paddingVertical: 20,
   },
   statItem: {
     alignItems: 'center',
   },
   statNumber: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#111827',
+    marginTop: 8,
   },
   statLabel: {
     fontSize: 12,
@@ -253,41 +201,33 @@ const styles = StyleSheet.create({
   },
   statDivider: {
     width: 1,
-    height: 40,
     backgroundColor: '#e5e7eb',
   },
   section: {
-    backgroundColor: '#ffffff',
-    marginBottom: 16,
+    marginHorizontal: 20,
+    marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: '600',
-    color: '#6b7280',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
-  signOutContainer: {
-    padding: 16,
+    color: '#111827',
+    marginBottom: 12,
   },
   signOutButton: {
-    borderColor: '#ef4444',
+    backgroundColor: '#ef4444',
   },
-  signOutButtonContent: {
-    paddingVertical: 8,
-  },
-  versionContainer: {
+  footer: {
     alignItems: 'center',
-    paddingVertical: 24,
+    paddingVertical: 40,
+    paddingBottom: 60,
   },
-  versionText: {
+  version: {
+    fontSize: 14,
+    color: '#6b7280',
+  },
+  copyright: {
     fontSize: 12,
     color: '#9ca3af',
-  },
-  versionSubtext: {
-    fontSize: 10,
-    color: '#d1d5db',
     marginTop: 4,
   },
 });

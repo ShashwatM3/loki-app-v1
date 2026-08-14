@@ -12,6 +12,7 @@
     "clsx": "^2.0.0",
     "date-fns": "^2.29.3",
     "expo": "~48.0.0",
+    "expo-crypto": "^57.0.1",
     "expo-location": "~15.1.1",
     "expo-status-bar": "~1.4.4",
     "firebase": "^10.3.1",

@@ -11,12 +11,32 @@ import BrowseScreen from '../app/main/BrowseScreen';
 import MapsScreen from '../app/main/MapsScreen';
 import CollectionsScreen from '../app/main/CollectionsScreen';
 import ProfileScreen from '../app/main/ProfileScreen';
+import AIChatbotScreen from '../app/main/AIChatbotScreen';
 
 // Types
 import { useCounterStore } from '../lib/store';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+
+// Placeholder screens for navigation
+const PlaceDetailScreen = ({ route }: any) => {
+  const { place } = route.params;
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text>Place Detail: {place.name}</Text>
+    </View>
+  );
+};
+
+const CollectionDetailScreen = ({ route }: any) => {
+  const { collection } = route.params;
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text>Collection Detail: {collection.name}</Text>
+    </View>
+  );
+};
 
 function MainTabs() {
   const userData = useCounterStore((state) => state.userData);
@@ -100,7 +120,24 @@ export default function AppNavigator() {
         {!userData.email ? (
           <Stack.Screen name="Login" component={LoginScreen} />
         ) : (
-          <Stack.Screen name="Main" component={MainTabs} />
+          <>
+            <Stack.Screen name="Main" component={MainTabs} />
+            <Stack.Screen 
+              name="AIChatbot" 
+              component={AIChatbotScreen}
+              options={{ headerShown: true, title: 'Ask Loki', headerLeft: () => null }}
+            />
+            <Stack.Screen 
+              name="PlaceDetail" 
+              component={PlaceDetailScreen}
+              options={{ headerShown: true, title: 'Place Details' }}
+            />
+            <Stack.Screen 
+              name="CollectionDetail" 
+              component={CollectionDetailScreen}
+              options={{ headerShown: true, title: 'Collection' }}
+            />
+          </>
         )}
       </Stack.Navigator>
     </NavigationContainer>

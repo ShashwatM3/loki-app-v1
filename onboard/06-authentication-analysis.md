@@ -3,19 +3,23 @@
 ## Executive Summary
 This analysis compares two approaches for the LOKI mobile app implementation for the upcoming build + pitch night: a fully authenticated version versus a "bypassed" version with placeholder user data. The recommendation considers development time, user experience, feature completeness, and demo effectiveness.
 
+**IMPLEMENTATION NOTE**: The app uses **Expo Go with Firebase web SDK**, which simplifies authentication significantly compared to native Firebase implementations.
+
 ## Approach Comparison
 
-### Option 1: Full Authentication (Recommended)
+### Option 1: Full Authentication (Recommended & Implemented) ✅
 
 #### Description
-Implement the complete Google authentication flow using Firebase React Native Auth, maintaining full compatibility with the existing web application's user system.
+Implement the complete Google authentication flow using Firebase web SDK with browser-based sign-in, maintaining full compatibility with the existing web application's user system.
 
-#### Implementation Details
-- **Authentication**: Firebase React Native Auth with Google Sign-In
+#### Implementation Details (Expo Go + Web Firebase SDK)
+- **Authentication**: Firebase web SDK with Google Sign-In (signInWithPopup)
 - **User Management**: Real user accounts in Firebase
 - **Data Persistence**: User data stored in Firestore
 - **Feature Parity**: Complete feature access including collections, collaboration
 - **Backend Integration**: Uses existing `/api/create-account` and user management
+- **No Native Build Required**: Works with Expo Go without android/ios folders
+- **Browser-based Sign-In**: Opens Google sign-in in browser popup
 
 #### Pros
 1. **Complete Feature Set**: All features work as intended (collections, sharing, collaboration)
@@ -25,18 +29,21 @@ Implement the complete Google authentication flow using Firebase React Native Au
 5. **Web App Compatibility**: Same user accounts work on both web and mobile
 6. **Collaboration Features**: Shared collections and real-time sync work properly
 7. **Credible Demo**: Shows the actual product, not a simulation
+8. **Simple Setup**: No native configuration files needed
+9. **Cross-Platform**: Works on both iOS and Android via Expo Go
+10. **Fast Development**: Browser-based sign-in is easier to implement than native
 
 #### Cons
-1. **Development Time**: Requires 4-6 additional days for auth implementation
+1. **Development Time**: Requires 2-3 days for auth implementation (simplified with web SDK)
 2. **Demo Setup**: Requires test accounts and demo data preparation
 3. **Network Dependency**: Requires internet connection for authentication
-4. **Complexity**: More complex error handling and edge cases
-5. **Testing**: Needs thorough auth flow testing on both platforms
+4. **Browser Popup**: Sign-in opens in browser (normal for Expo Go)
 
 #### Implementation Effort
-- **Time**: 4-6 days additional development
-- **Complexity**: Medium (Firebase Auth is well-documented)
-- **Risk**: Low (standard implementation pattern)
+- **Time**: 2-3 days additional development (simplified with web SDK)
+- **Complexity**: Low (Firebase web SDK is well-documented and simple)
+- **Risk**: Very Low (standard implementation pattern)
+- **Setup**: Minimal (only .env configuration needed)
 
 ### Option 2: Bypassed Authentication (Not Recommended)
 

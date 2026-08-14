@@ -1,55 +1,48 @@
 import { auth, db } from '../lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { GoogleAuthProvider, signInWithPopup, browserLocalPersistence, setPersistence } from 'firebase/auth';
 import { apiClient } from './apiClient';
 import type { UserData } from '../lib/types';
 
+interface SignInResult {
+  userData: UserData;
+  isNewUser: boolean;
+}
+
 class AuthService {
-  async signInWithGoogle(): Promise<UserData> {
+  async signInWithGoogle(): Promise<SignInResult> {
     try {
+      // Set persistence to match web app
+      await setPersistence(auth, browserLocalPersistence);
+
       // For Expo Go, we use browser-based Google Sign-In
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
       const user = userCredential.user;
 
-      // Check if user document exists, create if not
+      // Call create-account API first (matches web app flow)
+      const response = await apiClient.post('/api/create-account', {
+        email: user.email,
+        name: user.displayName,
+        photo: user.photoURL
+      });
+
+      // Fetch user data from Firestore (API returns the same data)
       const userDocRef = doc(db, 'users', user.email!);
       const userDocSnap = await getDoc(userDocRef);
 
-      if (!userDocSnap.exists()) {
-        // Create new user document
-        const newUser: UserData = {
-          name: user.displayName || user.email!.split('@')[0],
-          email: user.email!,
-          photo: user.photoURL || '',
-          collections: [{
-            name: "Favorites",
-            type: "personal",
-            gradient: "linear-gradient(135deg, #ff9a9e, #fad0c4)",
-            places: [],
-            createdBy: user.email!,
-            ownerEmail: user.email!,
-            access: "edit"
-          }]
-        };
+      if (userDocSnap.exists()) {
+        const userData = userDocSnap.data() as UserData;
+        
+        // Check if this is a new user (has only "Favorites" collection)
+        const isNewUser = userData.collections.length === 1 && 
+                         userData.collections[0].name === "Favorites" &&
+                         userData.collections[0].places.length === 0;
 
-        await setDoc(userDocRef, newUser);
-
-        // Call create-account API
-        try {
-          await apiClient.post('/api/create-account', {
-            email: user.email,
-            name: user.displayName,
-            photo: user.photoURL
-          });
-        } catch (apiError) {
-          console.error('API call failed, but user created in Firestore:', apiError);
-        }
-
-        return newUser;
+        return { userData, isNewUser };
       }
 
-      return userDocSnap.data() as UserData;
+      throw new Error('User document not found after sign-in');
 
     } catch (error: any) {
       console.error('Error signing in with Google:', error);

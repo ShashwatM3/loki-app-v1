@@ -38,8 +38,14 @@ export default function LoginScreen() {
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
-      const userData = await authService.signInWithGoogle();
-      setUserData(userData);
+      const result = await authService.signInWithGoogle();
+      setUserData(result.userData);
+      
+      // For new users, we could show a welcome message or redirect to onboarding
+      // For now, just log it (onboarding can be added later)
+      if (result.isNewUser) {
+        console.log('New user signed in - could show welcome flash or onboarding');
+      }
     } catch (error: any) {
       Alert.alert('Sign-In Error', error.message || 'Failed to sign in with Google');
     } finally {

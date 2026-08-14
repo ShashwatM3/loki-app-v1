@@ -25,6 +25,8 @@ interface CounterStore {
   removeCategory: (category: string) => Promise<void>;
   customSubfilters: CustomSubfilter[];
   fetchCustomSubfilters: () => Promise<void>;
+  addCustomSubfilter: (subfilter: CustomSubfilter) => Promise<void>;
+  removeCustomSubfilter: (id: string) => Promise<void>;
 }
 
 export const useCounterStore = create<CounterStore>((set, get) => ({
@@ -152,6 +154,35 @@ export const useCounterStore = create<CounterStore>((set, get) => ({
       }
     } catch (error) {
       console.error("Failed to fetch custom sub-filters:", error);
+    }
+  },
+  
+  addCustomSubfilter: async (subfilter: CustomSubfilter) => {
+    const current = get().customSubfilters;
+    if (current.find(s => s.id === subfilter.id)) return;
+    const updated = [...current, subfilter];
+    set({ customSubfilters: updated });
+    try {
+      const docRef = doc(db, "config", "exploreSubfilters");
+      await setDoc(docRef, { items: updated });
+    } catch (error) {
+      console.error("Failed to add custom subfilter:", error);
+      set({ customSubfilters: current });
+      throw error;
+    }
+  },
+  
+  removeCustomSubfilter: async (id: string) => {
+    const current = get().customSubfilters;
+    const updated = current.filter(s => s.id !== id);
+    set({ customSubfilters: updated });
+    try {
+      const docRef = doc(db, "config", "exploreSubfilters");
+      await setDoc(docRef, { items: updated });
+    } catch (error) {
+      console.error("Failed to remove custom subfilter:", error);
+      set({ customSubfilters: current });
+      throw error;
     }
   },
 }));

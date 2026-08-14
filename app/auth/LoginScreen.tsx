@@ -1,143 +1,224 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Image,
-  ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  TouchableOpacity,
 } from 'react-native';
-import { Button, TextInput, Surface } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Button, TextInput } from 'react-native-paper';
+import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import authService from '../../services/authService';
 import { useCounterStore } from '../../lib/store';
 
 export default function LoginScreen() {
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const setUserData = useCounterStore((state) => state.setUserData);
-  const setAuthLoading = useCounterStore((state) => state.setAuthLoading);
 
-  useEffect(() => {
-    // Check if user is already signed in
-    const checkAuth = async () => {
-      try {
-        const userData = await authService.getCurrentUser();
-        if (userData) {
-          setUserData(userData);
-        }
-      } catch (error) {
-        console.error('Error checking auth status:', error);
-      } finally {
-        setAuthLoading(false);
-      }
-    };
+  const handleSubmit = async () => {
+    if (!email.trim() || !password) {
+      Alert.alert('Missing info', 'Please enter your email and password.');
+      return;
+    }
+    if (mode === 'signup' && !name.trim()) {
+      Alert.alert('Missing info', 'Please enter your name.');
+      return;
+    }
 
-    checkAuth();
-  }, [setUserData, setAuthLoading]);
-
-  const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
-      const result = await authService.signInWithGoogle();
+      const result =
+        mode === 'signin'
+          ? await authService.signInWithEmail(email, password)
+          : await authService.signUpWithEmail(name, email, password);
       setUserData(result.userData);
-      
-      // For new users, we could show a welcome message or redirect to onboarding
-      // For now, just log it (onboarding can be added later)
-      if (result.isNewUser) {
-        console.log('New user signed in - could show welcome flash or onboarding');
-      }
     } catch (error: any) {
-      Alert.alert('Sign-In Error', error.message || 'Failed to sign in with Google');
+      Alert.alert(mode === 'signin' ? 'Sign-in failed' : 'Sign-up failed', error.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Surface style={styles.card} elevation={4}>
+    <KeyboardAvoidingView
+      style={styles.flex}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.logoContainer}>
-          <Icon name="compass" size={80} color="#6366f1" />
+          <Icon name="compass" size={72} color="#818cf8" />
+          <Text style={styles.brand}>loki</Text>
         </View>
-        
-        <Text style={styles.title}>Welcome to Loki</Text>
-        <Text style={styles.subtitle}>
-          Discover the best places in Dubai
-        </Text>
 
-        <View style={styles.buttonContainer}>
+        <Text style={styles.title}>
+          {mode === 'signin' ? 'Welcome back' : 'Create your account'}
+        </Text>
+        <Text style={styles.subtitle}>Discover the best places in Dubai</Text>
+
+        <View style={styles.form}>
+          {mode === 'signup' && (
+            <TextInput
+              mode="outlined"
+              label="Name"
+              value={name}
+              onChangeText={setName}
+              autoCapitalize="words"
+              style={styles.input}
+              outlineColor="#27272a"
+              activeOutlineColor="#818cf8"
+              textColor="#fafafa"
+              theme={inputTheme}
+            />
+          )}
+          <TextInput
+            mode="outlined"
+            label="Email"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            autoComplete="email"
+            keyboardType="email-address"
+            style={styles.input}
+            outlineColor="#27272a"
+            activeOutlineColor="#818cf8"
+            textColor="#fafafa"
+            theme={inputTheme}
+          />
+          <TextInput
+            mode="outlined"
+            label="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            autoCapitalize="none"
+            style={styles.input}
+            outlineColor="#27272a"
+            activeOutlineColor="#818cf8"
+            textColor="#fafafa"
+            theme={inputTheme}
+            right={
+              <TextInput.Icon
+                icon={showPassword ? 'eye-off' : 'eye'}
+                color="#71717a"
+                onPress={() => setShowPassword((v) => !v)}
+              />
+            }
+          />
+
           <Button
             mode="contained"
-            onPress={handleGoogleSignIn}
+            onPress={handleSubmit}
             loading={loading}
             disabled={loading}
-            style={styles.googleButton}
-            contentStyle={styles.buttonContent}
-            icon={() => <Icon name="google" size={20} color="#ffffff" />}
+            style={styles.submitButton}
+            contentStyle={styles.submitContent}
+            buttonColor="#6366f1"
+            textColor="#ffffff"
           >
-            Sign in with Google
+            {mode === 'signin' ? 'Sign in' : 'Create account'}
           </Button>
+
+          <TouchableOpacity
+            style={styles.switchMode}
+            onPress={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
+            disabled={loading}
+          >
+            <Text style={styles.switchModeText}>
+              {mode === 'signin'
+                ? "New to Loki? Create an account"
+                : 'Already have an account? Sign in'}
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.infoContainer}>
-          <Text style={styles.infoText}>
-            By signing in, you agree to our Terms of Service and Privacy Policy
-          </Text>
-        </View>
-      </Surface>
-    </View>
+        <Text style={styles.infoText}>
+          By continuing, you agree to our Terms of Service and Privacy Policy
+        </Text>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f9fafb',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+const inputTheme = {
+  colors: {
+    onSurfaceVariant: '#71717a',
+    background: '#0b0b0f',
   },
-  card: {
-    width: '100%',
-    maxWidth: 400,
-    padding: 32,
-    borderRadius: 16,
-    backgroundColor: '#ffffff',
+};
+
+const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+    backgroundColor: '#0b0b0f',
+  },
+  container: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 28,
   },
   logoContainer: {
     alignItems: 'center',
     marginBottom: 24,
   },
+  brand: {
+    fontSize: 34,
+    fontWeight: 'bold',
+    color: '#fafafa',
+    letterSpacing: 2,
+    marginTop: 8,
+  },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
-    color: '#111827',
-    marginBottom: 8,
+    color: '#fafafa',
+    marginBottom: 6,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 15,
     textAlign: 'center',
-    color: '#6b7280',
-    marginBottom: 32,
+    color: '#a1a1aa',
+    marginBottom: 28,
   },
-  buttonContainer: {
+  form: {
     width: '100%',
-    marginBottom: 24,
   },
-  googleButton: {
-    backgroundColor: '#6366f1',
+  input: {
+    marginBottom: 14,
+    backgroundColor: '#0b0b0f',
   },
-  buttonContent: {
+  submitButton: {
+    marginTop: 6,
+    borderRadius: 10,
+  },
+  submitContent: {
     paddingVertical: 8,
   },
-  infoContainer: {
-    marginTop: 16,
+  switchMode: {
+    marginTop: 18,
+    alignItems: 'center',
+  },
+  switchModeText: {
+    color: '#818cf8',
+    fontSize: 14,
+    fontWeight: '600',
   },
   infoText: {
     fontSize: 12,
     textAlign: 'center',
-    color: '#9ca3af',
+    color: '#52525b',
+    marginTop: 32,
     lineHeight: 16,
   },
 });

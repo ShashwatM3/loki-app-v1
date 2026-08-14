@@ -9,13 +9,26 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { Card, Button, ActivityIndicator } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { ActivityIndicator } from 'react-native-paper';
+import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
+import { Image } from 'react-native';
 import { apiClient } from '../../services/apiClient';
+
+interface RecommendationCard {
+  id: string;
+  name: string;
+  category: string;
+  image?: string;
+  rating?: number;
+  budget?: string;
+  location?: string;
+  blurb: string;
+}
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  recommendations?: RecommendationCard[];
 }
 
 export default function AIChatbotScreen({ navigation }: any) {
@@ -46,23 +59,23 @@ export default function AIChatbotScreen({ navigation }: any) {
     setLoading(true);
 
     try {
-      const response = await apiClient.post('/gpt', {
+      // The backend (/api/gpt) has its own Loki system prompt and is grounded
+      // in the real places database — we only send the conversation history.
+      const response = await apiClient.post('/api/gpt', {
         messages: [
-          {
-            role: 'system',
-            content: 'You are Loki, a helpful assistant for discovering places in Dubai. Help users find restaurants, activities, and experiences based on their preferences. Be concise and specific.',
-          },
-          ...messages.map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
-          userMessage,
+          ...messages
+            .slice(1) // skip the local welcome message
+            .map((m) => ({ role: m.role, content: m.content })),
+          { role: userMessage.role, content: userMessage.content },
         ],
       });
 
       const assistantMessage: Message = {
         role: 'assistant',
-        content: response.answer || response.message || 'Sorry, I couldn\'t process that request.',
+        content: response.answer || 'Sorry, I couldn\'t process that request.',
+        recommendations: Array.isArray(response.recommendations)
+          ? response.recommendations
+          : undefined,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -106,21 +119,53 @@ export default function AIChatbotScreen({ navigation }: any) {
         onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
       >
         {messages.map((message, index) => (
-          <View
-            key={index}
-            style={[
-              styles.messageBubble,
-              message.role === 'user' ? styles.userMessage : styles.assistantMessage,
-            ]}
-          >
-            <Text
+          <View key={index}>
+            <View
               style={[
-                styles.messageText,
-                message.role === 'user' ? styles.userMessageText : styles.assistantMessageText,
+                styles.messageBubble,
+                message.role === 'user' ? styles.userMessage : styles.assistantMessage,
               ]}
             >
-              {message.content}
-            </Text>
+              <Text
+                style={[
+                  styles.messageText,
+                  message.role === 'user' ? styles.userMessageText : styles.assistantMessageText,
+                ]}
+              >
+                {message.content}
+              </Text>
+            </View>
+            {message.recommendations && message.recommendations.length > 0 && (
+              <View style={styles.recsContainer}>
+                {message.recommendations.map((rec) => (
+                  <View key={rec.id} style={styles.recCard}>
+                    {!!rec.image && (
+                      <Image source={{ uri: rec.image }} style={styles.recImage} />
+                    )}
+                    <View style={styles.recBody}>
+                      <Text style={styles.recName} numberOfLines={1}>
+                        {rec.name}
+                      </Text>
+                      <View style={styles.recMeta}>
+                        <Text style={styles.recCategory} numberOfLines={1}>
+                          {rec.category}
+                        </Text>
+                        {!!rec.rating && (
+                          <View style={styles.recRating}>
+                            <Icon name="star" size={12} color="#f59e0b" />
+                            <Text style={styles.recRatingText}>{rec.rating}</Text>
+                          </View>
+                        )}
+                        {!!rec.budget && <Text style={styles.recBudget}>{rec.budget}</Text>}
+                      </View>
+                      <Text style={styles.recBlurb} numberOfLines={2}>
+                        {rec.blurb}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
         ))}
         {loading && (
@@ -314,5 +359,64 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: '#e5e7eb',
+  },
+  recsContainer: {
+    marginBottom: 12,
+  },
+  recCard: {
+    flexDirection: 'row',
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    marginBottom: 8,
+    overflow: 'hidden',
+    maxWidth: '92%',
+  },
+  recImage: {
+    width: 84,
+    height: 84,
+    backgroundColor: '#e5e7eb',
+  },
+  recBody: {
+    flex: 1,
+    padding: 10,
+  },
+  recName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  recMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  recCategory: {
+    fontSize: 11,
+    color: '#6b7280',
+    marginRight: 8,
+    flexShrink: 1,
+  },
+  recRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  recRatingText: {
+    fontSize: 11,
+    color: '#374151',
+    marginLeft: 2,
+  },
+  recBudget: {
+    fontSize: 11,
+    color: '#10b981',
+    fontWeight: '600',
+  },
+  recBlurb: {
+    fontSize: 12,
+    color: '#4b5563',
+    marginTop: 4,
+    lineHeight: 16,
   },
 });

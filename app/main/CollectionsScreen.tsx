@@ -7,10 +7,8 @@ import {
   TouchableOpacity,
   FlatList,
   TextInput,
-  Modal,
   Alert,
   Share,
-  Dimensions,
 } from 'react-native';
 import {
   Card,
@@ -18,63 +16,62 @@ import {
   FAB,
   Portal,
   Dialog,
-  Paragraph,
 } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 import { useCounterStore } from '../../lib/store';
-import { encrypt } from '../../lib/crypto';
-import type { CollectionType, Place } from '../../lib/types';
-import { apiClient } from '../../services/apiClient';
+import { createCollectionShareLink } from '../../lib/crypto';
+import { getRandomGradient } from '../../lib/utils';
+import type { CollectionType } from '../../lib/types';
 
-const { width } = Dimensions.get('window');
+/** Extract the first hex color from a CSS gradient string (web-compatible data). */
+function gradientColor(gradient?: string): string {
+  const match = gradient?.match(/#[0-9a-fA-F]{3,8}/);
+  return match ? match[0] : '#6366f1';
+}
 
 export default function CollectionsScreen({ navigation }: any) {
   const userData = useCounterStore((state) => state.userData);
   const setUserData = useCounterStore((state) => state.setUserData);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState('');
-  const [selectedCollection, setSelectedCollection] = useState<CollectionType | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const gradients = [
-    'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-    'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-    'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-    'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-  ];
+  const persistCollections = async (updatedCollections: CollectionType[]) => {
+    const previous = userData;
+    setUserData({ ...userData, collections: updatedCollections });
+    try {
+      await updateDoc(doc(db, 'users', userData.email), { collections: updatedCollections });
+    } catch (error) {
+      setUserData(previous);
+      throw error;
+    }
+  };
 
   const handleCreateCollection = async () => {
-    if (!newCollectionName.trim()) {
+    const name = newCollectionName.trim();
+    if (!name) {
       Alert.alert('Error', 'Please enter a collection name');
+      return;
+    }
+    if (userData.collections.some((c) => c.name.toLowerCase() === name.toLowerCase())) {
+      Alert.alert('Error', 'You already have a collection with this name');
       return;
     }
 
     setLoading(true);
     try {
-      const gradient = gradients[Math.floor(Math.random() * gradients.length)];
       const newCollection: CollectionType = {
-        name: newCollectionName.trim(),
+        name,
         type: 'personal',
-        gradient,
+        gradient: getRandomGradient(),
         places: [],
         ownerEmail: userData.email,
         createdBy: userData.email,
         access: 'edit',
       };
-
-      const updatedCollections = [...userData.collections, newCollection];
-      const updatedUserData = { ...userData, collections: updatedCollections };
-      
-      // Update local state
-      setUserData(updatedUserData);
-      
-      // Update Firestore
-      const { db } = require('../../lib/firebase');
-      const { doc, updateDoc } = require('firebase/firestore');
-      const userDocRef = doc(db, 'users', userData.email);
-      await updateDoc(userDocRef, { collections: updatedCollections });
-
+      await persistCollections([...userData.collections, newCollection]);
       setShowCreateDialog(false);
       setNewCollectionName('');
     } catch (error) {
@@ -85,10 +82,10 @@ export default function CollectionsScreen({ navigation }: any) {
     }
   };
 
-  const handleDeleteCollection = async (collectionId: string) => {
+  const handleDeleteCollection = (collection: CollectionType) => {
     Alert.alert(
       'Delete Collection',
-      'Are you sure you want to delete this collection?',
+      `Are you sure you want to delete "${collection.name}"?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -96,18 +93,9 @@ export default function CollectionsScreen({ navigation }: any) {
           style: 'destructive',
           onPress: async () => {
             try {
-              const updatedCollections = userData.collections.filter(
-                (c) => c.id !== collectionId
+              await persistCollections(
+                userData.collections.filter((c) => c.name !== collection.name)
               );
-              const updatedUserData = { ...userData, collections: updatedCollections };
-              
-              setUserData(updatedUserData);
-              
-              // Update Firestore
-              const { db } = require('../../lib/firebase');
-              const { doc, updateDoc } = require('firebase/firestore');
-              const userDocRef = doc(db, 'users', userData.email);
-              await updateDoc(userDocRef, { collections: updatedCollections });
             } catch (error) {
               Alert.alert('Error', 'Failed to delete collection');
               console.error(error);
@@ -120,21 +108,21 @@ export default function CollectionsScreen({ navigation }: any) {
 
   const handleShareCollection = async (collection: CollectionType) => {
     try {
-      const token = await encrypt(userData.email, collection.name);
-      const shareLink = `https://loki-bc0bb.web.app/collection/${token}`;
-      
+      const { link } = await createCollectionShareLink({
+        email: userData.email,
+        collection: collection.name,
+        access: 'view',
+      });
       await Share.share({
-        message: `Check out my collection "${collection.name}" on Loki! ${shareLink}`,
-        url: shareLink,
+        message: `Check out my collection "${collection.name}" on Loki! ${link}`,
       });
     } catch (error) {
-      Alert.alert('Error', 'Failed to share collection');
+      Alert.alert('Error', 'Failed to share collection. Check your internet connection.');
       console.error(error);
     }
   };
 
   const handleCollectionPress = (collection: CollectionType) => {
-    setSelectedCollection(collection);
     navigation.navigate('CollectionDetail', { collection });
   };
 
@@ -142,7 +130,7 @@ export default function CollectionsScreen({ navigation }: any) {
     <TouchableOpacity onPress={() => handleCollectionPress(item)}>
       <Card style={styles.collectionCard}>
         <Card.Content style={styles.collectionContent}>
-          <View style={[styles.collectionGradient, { backgroundColor: item.gradient }]}>
+          <View style={[styles.collectionGradient, { backgroundColor: gradientColor(item.gradient) }]}>
             <Text style={styles.collectionEmoji}>📚</Text>
             <Text style={styles.collectionCount}>{item.places.length}</Text>
           </View>
@@ -161,9 +149,9 @@ export default function CollectionsScreen({ navigation }: any) {
             >
               <Icon name="share-variant" size={20} color="#6366f1" />
             </TouchableOpacity>
-            {item.type === 'personal' && (
+            {item.name !== 'Favorites' && (
               <TouchableOpacity
-                onPress={() => handleDeleteCollection(item.id!)}
+                onPress={() => handleDeleteCollection(item)}
                 style={styles.actionButton}
               >
                 <Icon name="delete" size={20} color="#ef4444" />

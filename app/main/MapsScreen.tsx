@@ -6,9 +6,10 @@ import {
   TouchableOpacity,
   Image,
   Modal,
+  Linking,
 } from 'react-native';
 import { Button, Searchbar } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { useCounterStore } from '../../lib/store';
 import type { Place } from '../../lib/types';
@@ -68,12 +69,12 @@ export default function MapsScreen() {
       <View style={styles.mapPlaceholder}>
         <View style={styles.mapContent}>
           <Icon name="map-marker-radius" size={64} color="#6366f1" />
-          <Text style={styles.mapText}>Map View</Text>
+          <Text style={styles.mapText}>Explore Dubai</Text>
           <Text style={styles.mapSubtext}>
             {filteredPlaces.length} places to explore
           </Text>
           <Text style={styles.mapNote}>
-            Map integration requires Google Maps API configuration
+            Tap a pin to preview a place
           </Text>
         </View>
         
@@ -143,7 +144,7 @@ export default function MapsScreen() {
                 {selectedPlace.website && (
                   <Button
                     mode="contained"
-                    onPress={() => console.log('Open website:', selectedPlace.website)}
+                    onPress={() => Linking.openURL(selectedPlace.website!)}
                     style={styles.websiteButton}
                     icon={() => <Icon name="web" size={18} color="#ffffff" />}
                   >

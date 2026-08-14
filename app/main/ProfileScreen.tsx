@@ -14,11 +14,11 @@ import {
   List,
   Avatar,
 } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { useCounterStore } from '../../lib/store';
 import authService from '../../services/authService';
 
-export default function ProfileScreen({ navigation }: any) {
+export default function ProfileScreen() {
   const userData = useCounterStore((state) => state.userData);
   const setUserData = useCounterStore((state) => state.setUserData);
 
@@ -30,11 +30,8 @@ export default function ProfileScreen({ navigation }: any) {
   const handleSignOut = async () => {
     try {
       await authService.signOut();
+      // Clearing the user flips the navigator back to the Login screen automatically
       setUserData({ name: '', email: '', photo: '', collections: [] });
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Login' }],
-      });
     } catch (error) {
       console.error('Error signing out:', error);
     }

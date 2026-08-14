@@ -1,29 +1,20 @@
-// API Endpoints
-export const API_BASE_URL = process.env.API_BASE_URL || 'https://loki-bc0bb.web.app/api';
+// API Endpoints — all backend routes live on the deployed Loki website under /api/*
+export const WEB_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://lokidxb.com';
+export const API_BASE_URL = `${WEB_BASE_URL}/api`;
 
 export const API_ENDPOINTS = {
-  // Authentication
+  // Authentication / accounts
   CREATE_ACCOUNT: `${API_BASE_URL}/create-account`,
-  
-  // Shared Collections
-  SHARED_COLLECTION_SAVE: `${API_BASE_URL}/shared-collection/save`,
-  SHARED_COLLECTION_MUTATE: `${API_BASE_URL}/shared-collection/mutate`,
-  SHARED_COLLECTION_VOTE: `${API_BASE_URL}/shared-collection/vote`,
-  SHARED_COLLECTION_SEARCH_PLACES: `${API_BASE_URL}/shared-collection/search-places`,
-  
-  // Admin
-  ADMIN_PLACES: (id: string) => `${API_BASE_URL}/admin/places/${id}`,
-  ADMIN_UPLOAD_PLACE_IMAGE: `${API_BASE_URL}/admin/upload-place-image`,
-  ADMIN_PLACE_FROM_TEXT: `${API_BASE_URL}/admin/place-from-text`,
-  
-  // External Services
+
+  // Shared collections
+  ENCRYPT: `${API_BASE_URL}/encrypt`,
+  DECRYPT: `${API_BASE_URL}/decrypt`,
+  SHARED_COLLECTION: `${API_BASE_URL}/shared-collection`,
+
+  // External services
   GOOGLE_PLACES: `${API_BASE_URL}/google-places`,
   GEOCODE: `${API_BASE_URL}/geocode`,
   GPT: `${API_BASE_URL}/gpt`,
-  
-  // Agent
-  AGENT_SESSIONS: `${API_BASE_URL}/agent/sessions`,
-  AGENT_SESSION: (id: string) => `${API_BASE_URL}/agent/sessions/${id}`,
 } as const;
 
 // Firebase Collections

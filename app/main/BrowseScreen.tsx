@@ -10,8 +10,8 @@ import {
   FlatList,
   Dimensions,
 } from 'react-native';
-import { Searchbar, Card, Chip, FAB } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Searchbar, Card, Chip } from 'react-native-paper';
+import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { useCounterStore } from '../../lib/store';
 import { BROWSE_VIBES, getBrowseVibeById, placeMatchesBrowseVibe } from '../../lib/browseVibes';
 import { EXPLORE_GROUPS } from '../../lib/categories';
@@ -22,11 +22,16 @@ const { width } = Dimensions.get('window');
 export default function BrowseScreen({ navigation }: any) {
   const places = useCounterStore((state) => state.places);
   const userData = useCounterStore((state) => state.userData);
+  const fetchPlaces = useCounterStore((state) => state.fetchPlaces);
   const [greeting, setGreeting] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredPlaces, setFilteredPlaces] = useState<Place[]>([]);
   const [selectedVibe, setSelectedVibe] = useState<string | null>(null);
   const [searchExpanded, setSearchExpanded] = useState(false);
+
+  useEffect(() => {
+    fetchPlaces();
+  }, [fetchPlaces]);
 
   useEffect(() => {
     const hour = new Date().getHours();

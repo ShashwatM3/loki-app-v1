@@ -1,10 +1,3 @@
-import { type ClassValue, clsx } from 'clsx';
-
-// Utility function for conditional CSS classes
-export function cn(...inputs: ClassValue[]) {
-  return clsx(inputs);
-}
-
 // Generate random gradient for collections
 export function getRandomGradient() {
   const colors = [

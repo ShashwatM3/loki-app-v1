@@ -48,12 +48,11 @@ This document outlines the comprehensive strategy for building a React Native ve
   - firebase/auth: Authentication
   - firebase/firestore: Database
   - firebase/storage: File storage
-- **Browser-based Google Sign-In**: signInWithPopup (works in Expo Go)
+- **Email/password authentication**: signInWithEmailAndPassword / createUserWithEmailAndPassword (fully supported in Expo Go; `signInWithPopup` does NOT exist on React Native, and native Google Sign-In requires a development build)
 
 ### UI Component Libraries
 - **React Native Paper**: Material Design components
-- **React Native Reanimated**: Animations
-- **React Native Gesture Handler**: Touch gestures
+- **@expo/vector-icons**: Icon set (bundled with Expo)
 
 ### Maps & Location
 - **expo-location**: Location services
@@ -128,38 +127,41 @@ const storage = getStorage(app);
 export { app, auth, db, storage };
 ```
 
-### Browser-based Google Sign-In
+### Email/Password Authentication (Expo Go compatible)
 
 ```typescript
 // services/authService.ts
-import { auth } from '@/lib/firebase';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { auth } from '../lib/firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 
 class AuthService {
-  async signInWithGoogle(): Promise<UserData> {
-    // For Expo Go, we use browser-based Google Sign-In
-    const provider = new GoogleAuthProvider();
-    const userCredential = await signInWithPopup(auth, provider);
-    const user = userCredential.user;
-    // ... rest of the logic
+  async signInWithEmail(email: string, password: string) {
+    const credential = await signInWithEmailAndPassword(auth, email, password);
+    // then fetch-or-create the Firestore account via POST /api/create-account
+    // (same flow as the website, keyed by email)
   }
 }
 ```
 
+Note: `signInWithPopup` is web-only and throws on React Native. Google OAuth on mobile
+requires a development build with `@react-native-google-signin/google-signin`.
+
 ## Feature Implementation Status
 
 ### Phase 1: Core Features (MVP) ✅ COMPLETED
-1. **Authentication**: Google Sign-In, user creation ✅
-2. **Browse Screen**: Place discovery, search, filtering ✅
-3. **Collections**: Basic collection management ✅
-4. **Maps**: Placeholder map view ✅
-5. **Profile**: Basic user profile ✅
+1. **Authentication**: Email/password sign-in + sign-up, persistent sessions ✅
+2. **Browse Screen**: Place discovery, search, vibes, explore filtering ✅
+3. **Place Details**: Full details + save to collection ✅
+4. **Collections**: Create / delete / share (real encrypted links via backend) ✅
+5. **AI Chatbot**: "Ask Loki" via the real /api/gpt backend ✅
+6. **Maps**: Simplified pin view ✅
+7. **Profile**: User info, stats, sign out ✅
 
 ### Phase 2: Enhanced Features (Future)
-1. **AI Chatbot**: "Ask Loki" functionality
-2. **Shared Collections**: Collaboration features
-3. **Collection Voting**: Swipe deck for decisions
-4. **Advanced Filtering**: Vibe-based discovery
+1. **Google OAuth**: Requires development build
+2. **Full interactive map**: react-native-maps or MapLibre via dev build
+3. **Shared Collections**: Collaboration features
+4. **Collection Voting**: Swipe deck for decisions
 5. **Image Optimization**: Caching and preloading
 
 ### Phase 3: Advanced Features (Future)

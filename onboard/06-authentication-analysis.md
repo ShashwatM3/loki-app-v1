@@ -3,23 +3,23 @@
 ## Executive Summary
 This analysis compares two approaches for the LOKI mobile app implementation for the upcoming build + pitch night: a fully authenticated version versus a "bypassed" version with placeholder user data. The recommendation considers development time, user experience, feature completeness, and demo effectiveness.
 
-**IMPLEMENTATION NOTE**: The app uses **Expo Go with Firebase web SDK**, which simplifies authentication significantly compared to native Firebase implementations.
+**IMPLEMENTATION NOTE**: The app uses **Expo Go with the Firebase JS SDK**. Important: `signInWithPopup` (used by the website) is **web-only and does not exist on React Native** — the mobile app therefore uses **email/password authentication**, which the Firebase JS SDK fully supports in Expo Go and which is already enabled on the `loki-bc0bb` Firebase project. Google OAuth on mobile would require a development build with `@react-native-google-signin/google-signin`.
 
 ## Approach Comparison
 
 ### Option 1: Full Authentication (Recommended & Implemented) ✅
 
 #### Description
-Implement the complete Google authentication flow using Firebase web SDK with browser-based sign-in, maintaining full compatibility with the existing web application's user system.
+Implement real Firebase authentication (email/password in Expo Go), maintaining full compatibility with the existing web application's user system — accounts are keyed by email in Firestore, so app and website share the same data.
 
-#### Implementation Details (Expo Go + Web Firebase SDK)
-- **Authentication**: Firebase web SDK with Google Sign-In (signInWithPopup)
+#### Implementation Details (Expo Go + Firebase JS SDK)
+- **Authentication**: Firebase JS SDK with email/password (signInWithEmailAndPassword / createUserWithEmailAndPassword)
+- **Session Persistence**: initializeAuth + getReactNativePersistence(AsyncStorage)
 - **User Management**: Real user accounts in Firebase
-- **Data Persistence**: User data stored in Firestore
-- **Feature Parity**: Complete feature access including collections, collaboration
+- **Data Persistence**: User data stored in Firestore (keyed by email — shared with the website)
+- **Feature Parity**: Complete feature access including collections, sharing
 - **Backend Integration**: Uses existing `/api/create-account` and user management
 - **No Native Build Required**: Works with Expo Go without android/ios folders
-- **Browser-based Sign-In**: Opens Google sign-in in browser popup
 
 #### Pros
 1. **Complete Feature Set**: All features work as intended (collections, sharing, collaboration)
@@ -34,10 +34,9 @@ Implement the complete Google authentication flow using Firebase web SDK with br
 10. **Fast Development**: Browser-based sign-in is easier to implement than native
 
 #### Cons
-1. **Development Time**: Requires 2-3 days for auth implementation (simplified with web SDK)
-2. **Demo Setup**: Requires test accounts and demo data preparation
-3. **Network Dependency**: Requires internet connection for authentication
-4. **Browser Popup**: Sign-in opens in browser (normal for Expo Go)
+1. **Demo Setup**: Requires test accounts and demo data preparation (a demo account exists: demo@lokidxb.com)
+2. **Network Dependency**: Requires internet connection for authentication
+3. **No Google button in Expo Go**: Website Google accounts sign in on mobile by creating a password account with a different email, or via a future development build
 
 #### Implementation Effort
 - **Time**: 2-3 days additional development (simplified with web SDK)

@@ -1,15 +1,16 @@
 import axios, { AxiosInstance } from 'axios';
 import { auth } from '../lib/firebase';
 
-const API_BASE_URL = process.env.API_BASE_URL || 'https://loki-bc0bb.web.app/api';
+// Base URL of the deployed Loki website. All backend routes live under /api/*.
+export const WEB_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://lokidxb.com';
 
 class ApiClient {
   private client: AxiosInstance;
 
   constructor() {
     this.client = axios.create({
-      baseURL: API_BASE_URL.replace('/api', '') || 'https://loki-bc0bb.web.app',
-      timeout: 10000,
+      baseURL: WEB_BASE_URL,
+      timeout: 60000,
       headers: {
         'Content-Type': 'application/json',
       },

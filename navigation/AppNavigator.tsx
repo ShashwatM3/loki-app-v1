@@ -1,9 +1,9 @@
 import React from 'react';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { IconButton } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 
 // Screens
 import LoginScreen from '../app/auth/LoginScreen';
@@ -12,35 +12,15 @@ import MapsScreen from '../app/main/MapsScreen';
 import CollectionsScreen from '../app/main/CollectionsScreen';
 import ProfileScreen from '../app/main/ProfileScreen';
 import AIChatbotScreen from '../app/main/AIChatbotScreen';
+import PlaceDetailScreen from '../app/place/PlaceDetailScreen';
+import CollectionDetailScreen from '../app/collection/CollectionDetailScreen';
 
-// Types
 import { useCounterStore } from '../lib/store';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Placeholder screens for navigation
-const PlaceDetailScreen = ({ route }: any) => {
-  const { place } = route.params;
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>Place Detail: {place.name}</Text>
-    </View>
-  );
-};
-
-const CollectionDetailScreen = ({ route }: any) => {
-  const { collection } = route.params;
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>Collection Detail: {collection.name}</Text>
-    </View>
-  );
-};
-
 function MainTabs() {
-  const userData = useCounterStore((state) => state.userData);
-
   return (
     <Tab.Navigator
       screenOptions={{
@@ -51,9 +31,6 @@ function MainTabs() {
           backgroundColor: '#ffffff',
           borderTopWidth: 1,
           borderTopColor: '#e5e7eb',
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
         },
       }}
     >
@@ -62,9 +39,7 @@ function MainTabs() {
         component={BrowseScreen}
         options={{
           tabBarLabel: 'Browse',
-          tabBarIcon: ({ color, size }) => (
-            <Icon name="compass" size={size} color={color} />
-          ),
+          tabBarIcon: ({ color, size }) => <Icon name="compass" size={size} color={color} />,
         }}
       />
       <Tab.Screen
@@ -72,35 +47,27 @@ function MainTabs() {
         component={MapsScreen}
         options={{
           tabBarLabel: 'Maps',
+          tabBarIcon: ({ color, size }) => <Icon name="map" size={size} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="Collections"
+        component={CollectionsScreen}
+        options={{
+          tabBarLabel: 'Collections',
           tabBarIcon: ({ color, size }) => (
-            <Icon name="map" size={size} color={color} />
+            <Icon name="book-open-variant" size={size} color={color} />
           ),
         }}
       />
-      {userData.email && (
-        <>
-          <Tab.Screen
-            name="Collections"
-            component={CollectionsScreen}
-            options={{
-              tabBarLabel: 'Collections',
-              tabBarIcon: ({ color, size }) => (
-                <Icon name="book-open" size={size} color={color} />
-              ),
-            }}
-          />
-          <Tab.Screen
-            name="Profile"
-            component={ProfileScreen}
-            options={{
-              tabBarLabel: 'Profile',
-              tabBarIcon: ({ color, size }) => (
-                <Icon name="account" size={size} color={color} />
-              ),
-            }}
-          />
-        </>
-      )}
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          tabBarLabel: 'Profile',
+          tabBarIcon: ({ color, size }) => <Icon name="account" size={size} color={color} />,
+        }}
+      />
     </Tab.Navigator>
   );
 }
@@ -110,8 +77,11 @@ export default function AppNavigator() {
   const isAuthLoading = useCounterStore((state) => state.isAuthLoading);
 
   if (isAuthLoading) {
-    // You could return a loading screen here
-    return null;
+    return (
+      <View style={styles.splash}>
+        <ActivityIndicator size="large" color="#6366f1" />
+      </View>
+    );
   }
 
   return (
@@ -122,18 +92,18 @@ export default function AppNavigator() {
         ) : (
           <>
             <Stack.Screen name="Main" component={MainTabs} />
-            <Stack.Screen 
-              name="AIChatbot" 
+            <Stack.Screen
+              name="AIChatbot"
               component={AIChatbotScreen}
-              options={{ headerShown: true, title: 'Ask Loki', headerLeft: () => null }}
+              options={{ headerShown: false }}
             />
-            <Stack.Screen 
-              name="PlaceDetail" 
+            <Stack.Screen
+              name="PlaceDetail"
               component={PlaceDetailScreen}
               options={{ headerShown: true, title: 'Place Details' }}
             />
-            <Stack.Screen 
-              name="CollectionDetail" 
+            <Stack.Screen
+              name="CollectionDetail"
               component={CollectionDetailScreen}
               options={{ headerShown: true, title: 'Collection' }}
             />
@@ -143,3 +113,12 @@ export default function AppNavigator() {
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  splash: {
+    flex: 1,
+    backgroundColor: '#0b0b0f',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});

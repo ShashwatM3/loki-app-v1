@@ -15,7 +15,7 @@ A fully-functional React Native version of the LOKI web application with Google 
 
 ---
 
-## 🚀 Quick Start (20 Minutes)
+## 🚀 Quick Start (18 Minutes)
 
 Follow these 7 steps to get the app running on your device:
 
@@ -49,12 +49,12 @@ API_BASE_URL=https://loki-bc0bb.web.app/api
 
 **✅ DONE WHEN**: `.env` file exists with all Firebase values filled in
 
-### STEP 3: Firebase Console Setup (5 minutes)
+### STEP 3: Firebase Console Setup (3 minutes)
 1. Go to [Firebase Console](https://console.firebase.google.com/)
 2. Select your project (should be `loki-bc0bb`)
 3. Navigate to **Authentication** → **Sign-in method**
 4. Click on **Google** and enable it
-5. Add your development email to authorized domains
+5. Click **Save**
 
 **✅ DONE WHEN**: Google Sign-In is enabled in Firebase Authentication
 
@@ -139,7 +139,7 @@ API_BASE_URL=https://loki-bc0bb.web.app/api
 
 #### Enable Google Sign-In:
 1. Firebase Console → Authentication → Sign-in method → Google → Enable
-2. Add your email to authorized domains for testing
+2. Click **Save**
 
 #### Download Config Files:
 - **Android**: Firebase Console → Project Settings → Your Apps → Android → Download `google-services.json` → Place in `android/app/`

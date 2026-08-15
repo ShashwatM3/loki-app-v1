@@ -1,542 +1,833 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
-  TouchableOpacity,
-  Image,
+  Pressable,
+  StyleSheet,
   TextInput,
-  FlatList,
-  Dimensions,
 } from 'react-native';
-import { Searchbar, Card, Chip } from 'react-native-paper';
-import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import { Image } from 'expo-image';
+import {
+  ArrowLeft,
+  ArrowRight,
+  BookMarked,
+  Map,
+  Search,
+  Sparkles,
+  Wand2,
+  type LucideIcon,
+} from 'lucide-react-native';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { Sheet } from '../../components/ui/Sheet';
 import { useCounterStore } from '../../lib/store';
-import { BROWSE_VIBES, getBrowseVibeById, placeMatchesBrowseVibe } from '../../lib/browseVibes';
-import { EXPLORE_GROUPS } from '../../lib/categories';
+import { getBrowseVibeById, type BrowseVibeDefinition } from '../../lib/browseVibes';
+import { isActiveLimitedTimePopup, isExpiredLimitedTimePopup } from '../../lib/isActiveLimitedTimePopup';
+import { CuratedAlbums } from '../../components/browse/CuratedAlbums';
+import { ExploreSection } from '../../components/browse/ExploreSection';
+import { VibePlacesGrid } from '../../components/browse/VibePlacesGrid';
+import { PlaceDetailsContent } from '../../components/PlaceDetailsContent';
+import { LokiChatSheet } from '../../components/LokiChatSheet';
+import { usePlaceImages } from '../../lib/usePlaceImages';
+import { colors, fonts, radius, tw, whiteAlpha, shadows } from '../../lib/theme';
 import type { Place } from '../../lib/types';
 
-const { width } = Dimensions.get('window');
+type BrowseRouteParams = { vibe?: string } | undefined;
 
-export default function BrowseScreen({ navigation }: any) {
+/** 1:1 port of app/dashboard/landing-variation/page.tsx (== /dashboard/browse). */
+export default function BrowseScreen() {
+  const navigation = useNavigation<any>();
+  const route = useRoute<RouteProp<Record<string, BrowseRouteParams>, string>>();
+  const insets = useSafeAreaInsets();
   const places = useCounterStore((state) => state.places);
   const userData = useCounterStore((state) => state.userData);
   const fetchPlaces = useCounterStore((state) => state.fetchPlaces);
-  const [greeting, setGreeting] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredPlaces, setFilteredPlaces] = useState<Place[]>([]);
-  const [selectedVibe, setSelectedVibe] = useState<string | null>(null);
-  const [searchExpanded, setSearchExpanded] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [activeVibe, setActiveVibe] = useState<BrowseVibeDefinition | null>(null);
+  const [albumSearchQuery, setAlbumSearchQuery] = useState('');
+  const [isAlbumSearchOpen, setIsAlbumSearchOpen] = useState(false);
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const searchInputRef = useRef<TextInput>(null);
+  const albumSearchInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     fetchPlaces();
   }, [fetchPlaces]);
 
+  // Same gate as maps: only surface places whose images successfully load.
+  const imageStatuses = usePlaceImages(places);
+  const placesWithImages = places.filter(
+    (p) => imageStatuses.get(String(p.id)) === 'ready' && !isExpiredLimitedTimePopup(p)
+  );
+
   useEffect(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) setGreeting('Good morning');
-    else if (hour < 17) setGreeting('Good afternoon');
-    else setGreeting('Good evening');
+    const queryVibe = getBrowseVibeById(route.params?.vibe ?? null);
+    setActiveVibe(queryVibe);
+  }, [route.params?.vibe]);
+
+  useEffect(() => {
+    if (!isSearchOpen) return;
+    const timeout = setTimeout(() => searchInputRef.current?.focus(), 160);
+    return () => clearTimeout(timeout);
+  }, [isSearchOpen]);
+
+  useEffect(() => {
+    if (!isAlbumSearchOpen) return;
+    const timeout = setTimeout(() => albumSearchInputRef.current?.focus(), 160);
+    return () => clearTimeout(timeout);
+  }, [isAlbumSearchOpen]);
+
+  const firstName = useMemo(
+    () => (userData?.name ? userData.name.trim().split(' ')[0] : null),
+    [userData?.name]
+  );
+
+  const timeGreeting = useMemo(() => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
   }, []);
 
-  useEffect(() => {
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      const filtered = places.filter((place) => {
-        return (
-          place.name.toLowerCase().includes(query) ||
-          place.category.toLowerCase().includes(query) ||
-          place.tags.some((tag) => tag.toLowerCase().includes(query)) ||
-          (place.description && place.description.toLowerCase().includes(query)) ||
-          (place.location && place.location.toLowerCase().includes(query))
-        );
-      });
-      setFilteredPlaces(filtered);
-    } else if (selectedVibe) {
-      const vibe = getBrowseVibeById(selectedVibe);
-      if (vibe) {
-        const filtered = places.filter((place) => placeMatchesBrowseVibe(place, vibe));
-        setFilteredPlaces(filtered);
-      }
-    } else {
-      setFilteredPlaces(places);
-    }
-  }, [searchQuery, selectedVibe, places]);
+  const filteredPlaces = useMemo(() => {
+    const sq = searchQuery.toLowerCase().trim();
+    return placesWithImages.filter((p) => {
+      if (!p) return false;
+      const matchesSearch =
+        !sq ||
+        p.name?.toLowerCase().includes(sq) ||
+        p.category?.toLowerCase().includes(sq) ||
+        p.location?.toLowerCase().includes(sq) ||
+        (Array.isArray(p.tags) && p.tags.some((t) => t.toLowerCase().includes(sq))) ||
+        (p.description && p.description.toLowerCase().includes(sq));
+      const matchesVibe = !activeVibe || activeVibe.predicate(p);
+      return matchesSearch && matchesVibe;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [placesWithImages.length, searchQuery, activeVibe, imageStatuses]);
 
-  const handleVibePress = (vibeId: string) => {
-    setSelectedVibe(vibeId === selectedVibe ? null : vibeId);
+  const topPicks = useMemo(() => filteredPlaces.slice(0, 10), [filteredPlaces]);
+
+  const albumPlaces = useMemo(() => {
+    if (!activeVibe) return [];
+    const sq = albumSearchQuery.toLowerCase().trim();
+    return placesWithImages.filter((p) => {
+      if (!p || !activeVibe.predicate(p)) return false;
+      if (!sq) return true;
+      return (
+        p.name?.toLowerCase().includes(sq) ||
+        p.category?.toLowerCase().includes(sq) ||
+        p.location?.toLowerCase().includes(sq) ||
+        (Array.isArray(p.tags) && p.tags.some((t) => t.toLowerCase().includes(sq))) ||
+        (p.description && p.description.toLowerCase().includes(sq))
+      );
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [placesWithImages.length, activeVibe, albumSearchQuery, imageStatuses]);
+
+  const handleSelectVibe = (vibe: BrowseVibeDefinition) => {
+    setAlbumSearchQuery('');
+    setIsAlbumSearchOpen(false);
+    navigation.setParams({ vibe: vibe.id });
   };
 
-  const handlePlacePress = (place: Place) => {
-    navigation.navigate('PlaceDetail', { place });
+  const handleBackToAlbums = () => {
+    setActiveVibe(null);
+    setAlbumSearchQuery('');
+    setIsAlbumSearchOpen(false);
+    navigation.setParams({ vibe: undefined });
   };
 
-  const handleAskLoki = () => {
-    navigation.navigate('AIChatbot');
+  const handleSelectPlace = (place: Place) => {
+    setSelectedPlace(place);
   };
-
-  const renderVibeCard = ({ item }: { item: any }) => (
-    <TouchableOpacity
-      style={styles.vibeCard}
-      onPress={() => handleVibePress(item.id)}
-      activeOpacity={0.7}
-    >
-      <Image source={{ uri: item.bannerImage }} style={styles.vibeBanner} />
-      <View style={styles.vibeOverlay}>
-        <Text style={styles.vibeEmoji}>{item.emoji}</Text>
-        <Text style={styles.vibeLabel}>{item.label}</Text>
-        {item.blurb && <Text style={styles.vibeBlurb}>{item.blurb}</Text>}
-      </View>
-    </TouchableOpacity>
-  );
-
-  const renderPlaceCard = ({ item }: { item: Place }) => (
-    <Card style={styles.placeCard} onPress={() => handlePlacePress(item)}>
-      <Card.Cover source={{ uri: item.image }} style={styles.placeImage} />
-      <Card.Content style={styles.placeContent}>
-        <Text style={styles.placeName} numberOfLines={1}>
-          {item.name}
-        </Text>
-        <Text style={styles.placeCategory} numberOfLines={1}>
-          {item.category}
-        </Text>
-        <View style={styles.placeMeta}>
-          <View style={styles.ratingContainer}>
-            <Icon name="star" size={14} color="#FFA500" />
-            <Text style={styles.rating}>{item.rating}</Text>
-          </View>
-          {item.budget && (
-            <Chip mode="flat" compact style={styles.budgetChip}>
-              {item.budget}
-            </Chip>
-          )}
-        </View>
-      </Card.Content>
-    </Card>
-  );
-
-  const renderExploreGroup = ({ item }: { item: any }) => (
-    <View style={styles.exploreGroup}>
-      <Text style={styles.exploreGroupLabel}>
-        {item.emoji} {item.label}
-      </Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={styles.subfilterContainer}>
-          {item.subfilters.map((subfilter: any, index: number) => (
-            <Chip
-              key={index}
-              mode="outlined"
-              style={styles.subfilterChip}
-              onPress={() => {
-                setSearchQuery(subfilter.keywords[0]);
-                setSearchExpanded(true);
-              }}
-            >
-              {subfilter.emoji} {subfilter.label}
-            </Chip>
-          ))}
-        </View>
-      </ScrollView>
-    </View>
-  );
 
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header with greeting */}
-        <View style={styles.header}>
-          <Text style={styles.greeting}>{greeting}, {userData.name?.split(' ')[0] || 'there'}!</Text>
-          <Text style={styles.subtitle}>What are you in the mood for?</Text>
+    <View style={styles.root}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingTop: insets.top + 24, paddingBottom: 96 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Top bar */}
+        <View style={styles.topBar}>
+          <Text style={styles.logo}>loki.</Text>
+          <Button
+            variant="ghost"
+            size="icon"
+            accessibilityLabel="Search"
+            onPress={() => setIsSearchOpen((p) => !p)}
+          >
+            <Search size={16} color={colors.foreground} />
+          </Button>
         </View>
 
-        {/* Ask Loki AI Chatbot */}
-        <TouchableOpacity style={styles.askLokiButton} onPress={handleAskLoki}>
-          <View style={styles.askLokiContent}>
-            <Icon name="robot" size={24} color="#6366f1" />
-            <View style={styles.askLokiText}>
-              <Text style={styles.askLokiTitle}>Ask Loki</Text>
-              <Text style={styles.askLokiSubtitle}>Get personalized recommendations</Text>
-            </View>
-            <Icon name="chevron-right" size={24} color="#9ca3af" />
-          </View>
-        </TouchableOpacity>
+        {/* Greeting */}
+        <View style={styles.greeting}>
+          <Text style={styles.greetingSmall}>{timeGreeting}</Text>
+          <Text style={styles.greetingName}>{firstName ?? 'Welcome'}</Text>
+        </View>
 
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          {searchExpanded ? (
-            <Searchbar
-              placeholder="Search places, categories, vibes..."
-              onChangeText={setSearchQuery}
-              value={searchQuery}
-              style={styles.searchBar}
-              autoFocus
-              onIconPress={() => {
-                setSearchExpanded(false);
-                setSearchQuery('');
-              }}
-            />
+        {/* Collapsible global search */}
+        {isSearchOpen ? (
+          <View style={styles.searchWrap}>
+            <View style={styles.searchInputWrap}>
+              <Search size={16} color={colors.mutedForeground} style={styles.searchIcon} />
+              <Input
+                ref={searchInputRef}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholder="Search places…"
+                style={styles.searchInput}
+              />
+            </View>
+          </View>
+        ) : null}
+
+        {/* Main content */}
+        <View style={{ marginTop: 32, gap: 40 }}>
+          {searchQuery.trim().length > 0 ? (
+            <View style={styles.px}>
+              <SearchResultsList places={filteredPlaces} onSelect={handleSelectPlace} />
+            </View>
           ) : (
-            <TouchableOpacity
-              style={styles.searchCollapsed}
-              onPress={() => setSearchExpanded(true)}
-            >
-              <Icon name="magnify" size={24} color="#9ca3af" />
-              <Text style={styles.searchPlaceholder}>Search places...</Text>
-            </TouchableOpacity>
+            <>
+              {/* a) AI chatbot — top of the home page so it's unmistakable */}
+              <View style={styles.px}>
+                <View style={styles.askHeader}>
+                  <View style={styles.askIconCircle}>
+                    <Sparkles size={16} color={colors.background} />
+                  </View>
+                  <View>
+                    <Text style={styles.askTitle}>Ask Loki</Text>
+                    <Text style={styles.askSubtitle}>Your AI concierge for tonight</Text>
+                  </View>
+                </View>
+                <Pressable onPress={() => setIsChatOpen(true)} style={styles.askInputFake}>
+                  <Text style={styles.askInputFakeText}>What are you looking for tonight?</Text>
+                </Pressable>
+                <View style={styles.askActions}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onPress={() => navigation.navigate('Maps')}
+                    style={{ borderRadius: 999 }}
+                  >
+                    <Map size={12} color={colors.foreground} />
+                    <Text style={styles.mapViewBtnText}>Map view</Text>
+                  </Button>
+                </View>
+              </View>
+
+              {/* b) Explore — vibe/category groups with their sub-filters */}
+              {!activeVibe ? (
+                <View style={styles.px}>
+                  <ExploreSection places={placesWithImages} onSelectPlace={handleSelectPlace} />
+                </View>
+              ) : null}
+
+              {/* c) Curated albums — or a vibe drill-down when one is active */}
+              {activeVibe ? (
+                <View style={styles.px}>
+                  <Pressable onPress={handleBackToAlbums} style={styles.backToAlbums}>
+                    <ArrowLeft size={14} color={colors.mutedForeground} />
+                    <Text style={styles.backToAlbumsText}>Back to albums</Text>
+                  </Pressable>
+
+                  <View style={styles.vibeHeaderRow}>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={styles.vibeTitle}>{activeVibe.label}</Text>
+                      {activeVibe.blurb ? <Text style={styles.vibeBlurb}>{activeVibe.blurb}</Text> : null}
+                    </View>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      accessibilityLabel={isAlbumSearchOpen ? 'Close search' : 'Search places in this album'}
+                      onPress={() => setIsAlbumSearchOpen((prev) => !prev)}
+                    >
+                      <Search size={16} color={colors.foreground} />
+                    </Button>
+                  </View>
+
+                  {isAlbumSearchOpen ? (
+                    <View style={{ marginBottom: 16 }}>
+                      <View style={styles.searchInputWrap}>
+                        <Search size={16} color={colors.mutedForeground} style={styles.searchIcon} />
+                        <Input
+                          ref={albumSearchInputRef}
+                          value={albumSearchQuery}
+                          onChangeText={setAlbumSearchQuery}
+                          placeholder={`Search in ${activeVibe.label}…`}
+                          style={[styles.searchInput, { borderRadius: radius.md }]}
+                        />
+                      </View>
+                    </View>
+                  ) : null}
+
+                  <VibePlacesGrid places={albumPlaces} onSelect={handleSelectPlace} />
+                </View>
+              ) : (
+                <View style={styles.px}>
+                  <View style={{ marginBottom: 16 }}>
+                    <Text style={styles.sectionTitle}>Can't choose? Loki has some suggestions</Text>
+                    <Text style={styles.sectionSubtitle}>Hand-picked spots for every mood</Text>
+                  </View>
+                  <CuratedAlbums
+                    places={placesWithImages}
+                    onSelectVibe={handleSelectVibe}
+                    onSelectPlace={handleSelectPlace}
+                  />
+                </View>
+              )}
+
+              {/* Quick access */}
+              <View style={styles.px}>
+                <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Quick Access</Text>
+                <View style={styles.quickGrid}>
+                  <QuickAccessButton icon={Map} label="Map" onPress={() => navigation.navigate('Maps')} />
+                  <QuickAccessButton
+                    icon={BookMarked}
+                    label="Collections"
+                    onPress={() => navigation.navigate('Collections')}
+                  />
+                  <QuickAccessButton
+                    icon={Wand2}
+                    label="Quiz"
+                    onPress={() => navigation.navigate('Onboarding')}
+                  />
+                </View>
+              </View>
+
+              {/* Today's picks — scrolling portrait cards at the bottom */}
+              {topPicks.length > 0 ? (
+                <View style={{ minWidth: 0 }}>
+                  <View style={[styles.px, { marginBottom: 12 }]}>
+                    <Text style={styles.sectionTitle}>Today's picks for you</Text>
+                    <Text style={styles.sectionSubtitle}>Fresh spots, hand-picked daily</Text>
+                  </View>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ gap: 14, paddingHorizontal: 16, paddingBottom: 8 }}
+                  >
+                    {topPicks.map((place) => (
+                      <PickCard key={String(place.id)} place={place} onSelect={handleSelectPlace} />
+                    ))}
+                  </ScrollView>
+                </View>
+              ) : null}
+
+              {/* Sign in CTA */}
+              {!userData?.email ? (
+                <View style={styles.signInCta}>
+                  <Text style={styles.signInCtaTitle}>Sign in to save places</Text>
+                  <Text style={styles.signInCtaSubtitle}>Create collections and keep your favorites.</Text>
+                  <View style={styles.signInCtaActions}>
+                    <Button onPress={() => navigation.navigate('Authentication')}>
+                      <Text style={styles.signInBtnText}>Sign in</Text>
+                      <ArrowRight size={16} color={colors.primaryForeground} />
+                    </Button>
+                    <Button variant="outline" onPress={() => navigation.navigate('Onboarding')}>
+                      Go back to quiz
+                    </Button>
+                  </View>
+                </View>
+              ) : null}
+            </>
           )}
         </View>
-
-        {/* Curated Vibes */}
-        {!searchQuery && !selectedVibe && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Curated for you</Text>
-            <FlatList
-              data={BROWSE_VIBES}
-              renderItem={renderVibeCard}
-              keyExtractor={(item) => item.id}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.vibeList}
-            />
-          </View>
-        )}
-
-        {/* Explore Section */}
-        {!searchQuery && !selectedVibe && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Explore</Text>
-            <FlatList
-              data={EXPLORE_GROUPS}
-              renderItem={renderExploreGroup}
-              keyExtractor={(item) => item.id}
-              scrollEnabled={false}
-            />
-          </View>
-        )}
-
-        {/* Selected Vibe Header */}
-        {selectedVibe && (
-          <View style={styles.section}>
-            <TouchableOpacity onPress={() => setSelectedVibe(null)}>
-              <Text style={styles.backButton}>
-                <Icon name="arrow-left" size={16} /> Back to all vibes
-              </Text>
-            </TouchableOpacity>
-            <VibeHeader vibeId={selectedVibe} />
-          </View>
-        )}
-
-        {/* Places Grid */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            {selectedVibe ? 'Places' : searchQuery ? 'Search Results' : 'All Places'}
-            {' '}
-            ({filteredPlaces.length})
-          </Text>
-          {filteredPlaces.length > 0 ? (
-            <FlatList
-              data={filteredPlaces}
-              renderItem={renderPlaceCard}
-              keyExtractor={(item) => item.id}
-              numColumns={2}
-              scrollEnabled={false}
-              columnWrapperStyle={styles.placeRow}
-              contentContainerStyle={styles.placesList}
-            />
-          ) : (
-            <View style={styles.emptyState}>
-              <Icon name="map-marker-off" size={48} color="#9ca3af" />
-              <Text style={styles.emptyText}>No places found</Text>
-              <Text style={styles.emptySubtext}>Try adjusting your search or filters</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Quick Access */}
-        {!searchQuery && !selectedVibe && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Quick Access</Text>
-            <View style={styles.quickAccessGrid}>
-              <TouchableOpacity
-                style={styles.quickAccessButton}
-                onPress={() => navigation.navigate('Maps')}
-              >
-                <Icon name="map" size={24} color="#6366f1" />
-                <Text style={styles.quickAccessLabel}>Map</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.quickAccessButton}
-                onPress={() => navigation.navigate('Collections')}
-              >
-                <Icon name="book" size={24} color="#6366f1" />
-                <Text style={styles.quickAccessLabel}>Collections</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
       </ScrollView>
+
+      {/* Ask Loki chat sheet */}
+      <LokiChatSheet open={isChatOpen} onOpenChange={setIsChatOpen} />
+
+      {/* Place details sheet */}
+      <Sheet open={!!selectedPlace} onOpenChange={(open) => !open && setSelectedPlace(null)}>
+        {selectedPlace ? (
+          <PlaceDetailsContent
+            place={selectedPlace}
+            onClose={() => setSelectedPlace(null)}
+            isDrawer
+          />
+        ) : (
+          <View />
+        )}
+      </Sheet>
     </View>
   );
 }
 
-function VibeHeader({ vibeId }: { vibeId: string }) {
-  const vibe = getBrowseVibeById(vibeId);
-  if (!vibe) return null;
+function PickCard({ place, onSelect }: { place: Place; onSelect: (p: Place) => void }) {
+  const reviewCount = Array.isArray(place.reviews)
+    ? place.reviews.length
+    : typeof place.reviews === 'number'
+      ? place.reviews
+      : 0;
 
   return (
-    <View style={styles.vibeHeader}>
-      <Text style={styles.vibeHeaderEmoji}>{vibe.emoji}</Text>
-      <View>
-        <Text style={styles.vibeHeaderLabel}>{vibe.label}</Text>
-        {vibe.blurb && <Text style={styles.vibeHeaderBlurb}>{vibe.blurb}</Text>}
+    <Pressable onPress={() => onSelect(place)} style={styles.pickCard}>
+      <View style={styles.pickCardImageWrap}>
+        {place.image ? (
+          <Image source={{ uri: place.image }} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
+        ) : null}
+        {reviewCount > 0 ? (
+          <View style={styles.reviewsBadge}>
+            <Text style={styles.reviewsBadgeText}>
+              {reviewCount} {reviewCount === 1 ? 'review' : 'reviews'}
+            </Text>
+          </View>
+        ) : null}
+        {place.popup ? (
+          <View style={styles.pickPopupBadge}>
+            <Text style={styles.pickPopupBadgeText}>Popup</Text>
+          </View>
+        ) : null}
+      </View>
+
+      <View style={styles.pickCardBody}>
+        <Text numberOfLines={1} style={styles.pickCardMeta}>
+          {place.category}
+          {place.location ? ` · ${place.location}` : ''}
+        </Text>
+        <Text numberOfLines={2} style={styles.pickCardName}>
+          {place.name}
+        </Text>
+        {place.description ? (
+          <Text numberOfLines={2} style={styles.pickCardDescription}>
+            "{place.description}"
+          </Text>
+        ) : null}
+        <Text style={styles.pickCardCta}>View spot →</Text>
+      </View>
+    </Pressable>
+  );
+}
+
+function QuickAccessButton({
+  icon: Icon,
+  label,
+  onPress,
+}: {
+  icon: LucideIcon;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress} style={styles.quickButton}>
+      <Icon size={20} color={colors.foreground} />
+      <Text style={styles.quickButtonLabel}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function SearchResultsList({
+  places,
+  onSelect,
+}: {
+  places: Place[];
+  onSelect: (p: Place) => void;
+}) {
+  return (
+    <View style={{ minWidth: 0 }}>
+      <View style={{ marginBottom: 12 }}>
+        <Text style={styles.sectionTitle}>Search results</Text>
+        <Text style={styles.searchResultsCount}>{places.length} matching places</Text>
+      </View>
+
+      <View style={{ gap: 10 }}>
+        {places.map((place) => {
+          const activeNow = isActiveLimitedTimePopup(place);
+          return (
+            <Pressable
+              key={String(place.id)}
+              onPress={() => onSelect(place)}
+              style={[styles.searchResultRow, activeNow ? styles.searchResultActiveNow : null]}
+            >
+              <View style={styles.searchResultImage}>
+                {place.image ? (
+                  <Image source={{ uri: place.image }} style={StyleSheet.absoluteFill} contentFit="cover" />
+                ) : null}
+              </View>
+
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text numberOfLines={1} style={styles.searchResultName}>
+                  {place.name}
+                </Text>
+                <View style={styles.searchResultMetaRow}>
+                  <View style={styles.searchResultCategoryBadge}>
+                    <Text style={styles.searchResultCategoryText}>{place.category}</Text>
+                  </View>
+                  {place.location ? (
+                    <Text numberOfLines={1} style={styles.searchResultLocation}>
+                      {place.location}
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
+
+              <View style={styles.viewBadge}>
+                <Text style={styles.viewBadgeText}>View</Text>
+              </View>
+            </Pressable>
+          );
+        })}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: colors.background,
   },
-  scrollView: {
-    flex: 1,
+  px: {
+    paddingHorizontal: 16,
   },
-  header: {
-    padding: 20,
-    paddingTop: 60,
-    backgroundColor: '#ffffff',
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+  },
+  logo: {
+    fontSize: 18,
+    fontFamily: fonts.sansBold,
+    letterSpacing: -0.45,
+    color: colors.foreground,
   },
   greeting: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#111827',
+    marginTop: 28,
+    paddingHorizontal: 16,
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#6b7280',
-    marginTop: 4,
-  },
-  askLokiButton: {
-    margin: 20,
-    marginTop: 0,
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  askLokiContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  askLokiText: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  askLokiTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  askLokiSubtitle: {
+  greetingSmall: {
     fontSize: 14,
-    color: '#6b7280',
-    marginTop: 2,
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
   },
-  searchContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
+  greetingName: {
+    marginTop: 4,
+    fontSize: 36,
+    lineHeight: 38,
+    fontFamily: fonts.sansBold,
+    letterSpacing: -0.9,
+    color: colors.foreground,
   },
-  searchBar: {
-    elevation: 0,
-    backgroundColor: '#f3f4f6',
+  searchWrap: {
+    marginTop: 16,
+    paddingHorizontal: 16,
   },
-  searchCollapsed: {
+  searchInputWrap: {
+    position: 'relative',
+    justifyContent: 'center',
+  },
+  searchIcon: {
+    position: 'absolute',
+    left: 12,
+    zIndex: 1,
+  },
+  searchInput: {
+    height: 40,
+    borderRadius: 999,
+    borderColor: colors.border,
+    backgroundColor: 'rgba(16,16,18,0.4)',
+    paddingLeft: 36,
+    paddingRight: 16,
+    fontSize: 14,
+  },
+  askHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f3f4f6',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
-  searchPlaceholder: {
-    marginLeft: 12,
-    color: '#9ca3af',
-    fontSize: 16,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#111827',
-    paddingHorizontal: 20,
+    gap: 8,
     marginBottom: 12,
   },
-  vibeList: {
-    paddingHorizontal: 20,
+  askIconCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.foreground,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  vibeCard: {
-    width: 200,
-    height: 280,
-    marginRight: 12,
-    borderRadius: 16,
-    overflow: 'hidden',
-    backgroundColor: '#ffffff',
+  askTitle: {
+    fontSize: 16,
+    fontFamily: fonts.sansSemiBold,
+    letterSpacing: -0.4,
+    color: colors.foreground,
   },
-  vibeBanner: {
+  askSubtitle: {
+    fontSize: 12,
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
+  },
+  askInputFake: {
     width: '100%',
-    height: '100%',
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: 'rgba(16,16,18,0.3)',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
-  vibeOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 16,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+  askInputFakeText: {
+    fontSize: 14,
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
   },
-  vibeEmoji: {
-    fontSize: 32,
-    marginBottom: 8,
+  askActions: {
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  vibeLabel: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 4,
+  mapViewBtnText: {
+    fontSize: 12,
+    color: colors.foreground,
+    fontFamily: fonts.sansMedium,
+  },
+  backToAlbums: {
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  backToAlbumsText: {
+    fontSize: 12,
+    fontFamily: fonts.sansMedium,
+    color: colors.mutedForeground,
+  },
+  vibeHeaderRow: {
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  vibeTitle: {
+    fontSize: 20,
+    fontFamily: fonts.sansSemiBold,
+    letterSpacing: -0.5,
+    color: colors.foreground,
   },
   vibeBlurb: {
-    fontSize: 12,
-    color: '#e5e7eb',
+    marginTop: 2,
+    fontSize: 14,
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
   },
-  exploreGroup: {
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  exploreGroupLabel: {
+  sectionTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 8,
+    fontFamily: fonts.sansSemiBold,
+    letterSpacing: -0.4,
+    color: colors.foreground,
   },
-  subfilterContainer: {
+  sectionSubtitle: {
+    fontSize: 12,
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
+  },
+  quickGrid: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  quickButton: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: radius['2xl'],
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: 'rgba(9,10,12,0.6)',
+    paddingVertical: 20,
+  },
+  quickButtonLabel: {
+    fontSize: 12,
+    fontFamily: fonts.sansMedium,
+    color: colors.mutedForeground,
+  },
+  pickCard: {
+    width: 168, // ~42vw on a 400pt phone
+  },
+  pickCardImageWrap: {
+    aspectRatio: 3 / 4,
+    width: '100%',
+    overflow: 'hidden',
+    borderRadius: radius['2xl'],
+    borderWidth: 1,
+    borderColor: whiteAlpha(0.044),
+    backgroundColor: colors.muted,
+  },
+  reviewsBadge: {
+    position: 'absolute',
+    bottom: 8,
+    left: 8,
+    borderRadius: 999,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  reviewsBadgeText: {
+    fontSize: 10,
+    fontFamily: fonts.sansMedium,
+    color: '#fff',
+  },
+  pickPopupBadge: {
+    position: 'absolute',
+    right: 8,
+    top: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(251,100,182,0.5)',
+    backgroundColor: 'rgba(230,0,118,0.9)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  pickPopupBadgeText: {
+    fontSize: 10,
+    fontFamily: fonts.sansBold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    color: '#fff',
+  },
+  pickCardBody: {
+    marginTop: 10,
+    paddingHorizontal: 2,
+  },
+  pickCardMeta: {
+    fontSize: 10,
+    fontFamily: fonts.sansMedium,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    color: colors.mutedForeground,
+  },
+  pickCardName: {
+    marginTop: 4,
+    fontSize: 14,
+    lineHeight: 19,
+    fontFamily: fonts.sansSemiBold,
+    color: colors.foreground,
+  },
+  pickCardDescription: {
+    marginTop: 4,
+    fontSize: 11,
+    lineHeight: 15,
+    fontStyle: 'italic',
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
+  },
+  pickCardCta: {
+    marginTop: 6,
+    fontSize: 12,
+    fontFamily: fonts.sansMedium,
+    color: 'rgba(232,232,232,0.8)', // text-primary/80
+  },
+  signInCta: {
+    marginHorizontal: 16,
+    borderRadius: radius['2xl'],
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+    padding: 20,
+    ...shadows.sm,
+  },
+  signInCtaTitle: {
+    fontSize: 16,
+    fontFamily: fonts.sansSemiBold,
+    letterSpacing: -0.4,
+    color: colors.foreground,
+  },
+  signInCtaSubtitle: {
+    marginTop: 4,
+    fontSize: 14,
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
+  },
+  signInCtaActions: {
+    marginTop: 16,
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: 8,
   },
-  subfilterChip: {
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  backButton: {
-    color: '#6366f1',
-    fontSize: 14,
-    marginBottom: 12,
-    paddingHorizontal: 20,
-  },
-  vibeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  vibeHeaderEmoji: {
-    fontSize: 48,
-    marginRight: 16,
-  },
-  vibeHeaderLabel: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#111827',
-  },
-  vibeHeaderBlurb: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginTop: 4,
-  },
-  placesList: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  placeRow: {
-    justifyContent: 'space-between',
-  },
-  placeCard: {
-    width: (width - 60) / 2,
-    marginBottom: 16,
-    elevation: 2,
-  },
-  placeImage: {
-    height: 120,
-  },
-  placeContent: {
-    padding: 12,
-  },
-  placeName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 4,
-  },
-  placeCategory: {
+  signInBtnText: {
     fontSize: 12,
-    color: '#6b7280',
-    marginBottom: 8,
+    fontFamily: fonts.sansMedium,
+    color: colors.primaryForeground,
   },
-  placeMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rating: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginLeft: 4,
-  },
-  budgetChip: {
-    height: 24,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 40,
-    paddingHorizontal: 20,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
-    marginTop: 16,
-  },
-  emptySubtext: {
+  searchResultsCount: {
+    marginTop: 2,
     fontSize: 14,
-    color: '#6b7280',
-    marginTop: 4,
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
   },
-  quickAccessGrid: {
+  searchResultRow: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    justifyContent: 'space-around',
-  },
-  quickAccessButton: {
     alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
+    gap: 12,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
-    width: (width - 60) / 2,
+    borderColor: whiteAlpha(0.066),
+    backgroundColor: 'rgba(9,10,12,0.4)',
+    padding: 10,
+    ...shadows.sm,
   },
-  quickAccessLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#111827',
-    marginTop: 8,
+  searchResultActiveNow: {
+    borderColor: 'rgba(248,113,113,0.45)',
+  },
+  searchResultImage: {
+    height: 48,
+    width: 48,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: whiteAlpha(0.055),
+    overflow: 'hidden',
+    backgroundColor: colors.muted,
+  },
+  searchResultName: {
+    fontSize: 16,
+    fontFamily: fonts.sansMedium,
+    color: colors.foreground,
+  },
+  searchResultMetaRow: {
+    marginTop: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  searchResultCategoryBadge: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.muted,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  searchResultCategoryText: {
+    fontSize: 10,
+    fontFamily: fonts.sansSemiBold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    color: colors.mutedForeground,
+  },
+  searchResultLocation: {
+    flexShrink: 1,
+    fontSize: 12,
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
+  },
+  viewBadge: {
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  viewBadgeText: {
+    fontSize: 12,
+    fontFamily: fonts.sansSemiBold,
+    color: colors.primaryForeground,
   },
 });

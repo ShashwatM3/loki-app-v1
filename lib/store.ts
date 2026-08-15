@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from './firebase';
+import { isExpiredLimitedTimePopup } from './isActiveLimitedTimePopup';
 import type { UserData, Place, CollectionType, CustomSubfilter } from './types';
 
 const DEFAULT_CATEGORIES = [
@@ -79,13 +80,11 @@ export const useCounterStore = create<CounterStore>((set, get) => ({
         } as Place);
       });
       
-      // Filter out expired pop-ups
-      const visiblePlaces = fetchedPlaces.filter((place) => {
-        if (!place.popup) return true;
-        if (!place.endDate) return true;
-        return new Date(place.endDate) > new Date();
-      });
-      
+      // Drop dated pop-ups whose end date has passed so ended events never show.
+      const visiblePlaces = fetchedPlaces.filter(
+        (place) => !isExpiredLimitedTimePopup(place)
+      );
+
       set({ places: visiblePlaces });
     } catch (error) {
       console.error("Failed to fetch places:", error);

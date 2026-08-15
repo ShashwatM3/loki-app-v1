@@ -96,10 +96,5 @@ export interface BrowseVibeDefinition {
   predicate: (place: Place) => boolean;
 }
 
-// Custom Subfilter interface
-export interface CustomSubfilter {
-  id: string;
-  label: string;
-  mainFilter: string;
-  predicate: (place: Place) => boolean;
-}
+// Custom Subfilter — same shape as the website (config/exploreSubfilters doc).
+export type { CustomSubfilter } from './exploreSubfilters';

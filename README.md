@@ -26,18 +26,28 @@ That's it. Everything below is already set up and verified working.
 
 ## What works (all verified end-to-end)
 
-| Feature | Status |
-|---|---|
-| **Auth** — email/password sign-in + sign-up, persistent sessions (survives app restarts) | ✅ |
-| **Browse** — time-of-day greeting, full-text search (name/category/tags/description/location), 8 curated vibes, explore groups, place cards from the live Firestore `places` collection | ✅ |
-| **Place details** — image, rating, budget, hours, tags, description, Google Maps / website links, **save to collection** | ✅ |
-| **Collections** — create, delete (Favorites protected), view places, real-time Firestore sync | ✅ |
-| **Share collections** — generates a real encrypted link via the backend (`/api/encrypt`) that opens at `lokidxb.com/collection/<token>` | ✅ |
-| **Ask Loki (AI)** — talks to the real `/api/gpt` backend, grounded in the actual places database, renders recommendation cards | ✅ |
-| **Profile** — avatar/initials, saved-places + collections stats, sign out | ✅ |
-| **Maps tab** — simplified pin view with place previews and location permission (not a full interactive map yet) | ⚠️ simplified |
+The app is a **1:1 UI port of every user-facing page on lokidxb.com** — same colors (the exact
+oklch palette converted to sRGB), same fonts (Geist + Outfit via Google Fonts), same layouts at the
+web's mobile breakpoint.
 
-**Not included (yet):** Google OAuth (requires a development build — see below), full interactive map, swipe-to-decide voting, Loki Wrapped.
+| Page / feature | Status |
+|---|---|
+| **Landing** — original variant (serif hero, draggable Instagram-style spot cards, animated violet glow, Loki lottie peeker) + **editorial variant** (3D auto-scrolling carousel, metrics, features, reviews, giant footer) with the same Original/Editorial toggle pill | ✅ |
+| **Authentication** — animated multi-color gradient header, glass card; email/password sign-in + sign-up, persistent sessions, returnTo redirects | ✅ |
+| **Browse (dashboard/browse)** — greeting, collapsible search, Ask Loki section, Explore groups → sub-filters → spots, curated vibe albums with "See all" drill-down + album search, Quick Access, Today's picks, guest sign-in CTA | ✅ |
+| **Ask Loki chat** — full-screen chat sheet, suggested prompts, typing dots, markdown answers, recommendation cards + MapLibre mini-map with numbered pins (real `/api/gpt`) | ✅ |
+| **Maps (dashboard/maps)** — "You are now entering maps" interstitial, the **exact same MapLibre GL dark Carto basemap as the web** (in a WebView), image-chip place markers with pop-in animation, radar user-location marker, popup cards with Directions/expand/website, marker eye-toggle, shuffle-to-hotspot, filter drawer (groups → sub-categories, budget, popups, 21+), drag-up Explore sheet with animated gradient border, area search via `/api/geocode` | ✅ |
+| **Place details** — hero image, rose category badge, Directions / Add to Collection / Website, THE VIBE box (vibe lines + gen-z blurb) | ✅ |
+| **Collections** — serif header, gradient/preview cards, create dialog, full-screen detail view (banner collage, hue-derived animated glow, members chips, invite collaborators, map preview + full-screen live collection map with shared locations, **swipe-to-decide voting** with winner/confetti/leaderboard/re-vote, lineup list, delete) | ✅ |
+| **Share collections** — full-screen "Link ready" flow (OnboardingGlow, auto-copy, native share sheet) via `/api/encrypt`; links open at `lokidxb.com/collection/<token>` | ✅ |
+| **Shared collection (`/collection/<token>`)** — deep-linked (`loki://collection/<token>` or the https link): name+emoji avatar picker, who's-here crew, live map, expandable lineup, swipe deck with cross-device votes, leaderboard, add-places flow (chips/budget/distance + swipe-to-add), save-to-account flow | ✅ |
+| **Profile** — animated violet glow + light rays, staggered fade-up, avatar ring, list groups, sign out (+ an extra "Loki" group linking to every ported marketing/legal page) | ✅ |
+| **Onboarding quiz (`/onboarding`)** — 7-step flow: intro screens, draggable interest cards, distance & budget option rows, spot-theme chips (max 5), building-your-map progress, ready screen | ✅ |
+| **Vibe picker (`/dashboard/landing-variation/vibes`)** — selectable vibe cards + Apply → filtered browse | ✅ |
+| **Static pages** — About, How it works, Ambassadors, Your Plans, Trial (image upload to Firebase Storage), Maintenance (same simplex-noise wavy canvas + glass card + team-access form), Cookie Policy, Privacy Policy, Welcome redirect | ✅ |
+
+**Intentionally not ported:** the internal `/admin` suite (web-only tooling) and the Hyperframes
+video overlays (removed by request). Google OAuth needs a development build (see below) — email/password is the sign-in method in Expo Go.
 
 ---
 
@@ -94,34 +104,55 @@ The code also has hardcoded fallbacks for every value, so the app works even wit
 
 ```
 loki-app/
-├── App.tsx                     # Root: providers + auth state bootstrap
-├── index.ts                    # Expo entry point
+├── App.tsx                       # Root: fonts (Geist/Outfit), gesture root, auth bootstrap, Toaster
+├── index.ts                      # Expo entry point
 ├── app/
-│   ├── auth/LoginScreen.tsx    # Email/password sign-in + sign-up
+│   ├── landing/                  # LandingScreen (original variant + toggle) & EditorialLanding
+│   ├── auth/AuthenticationScreen.tsx  # Gradient-flow header + glass card, email/password
 │   ├── main/
-│   │   ├── BrowseScreen.tsx    # Greeting, search, vibes, explore, place grid
-│   │   ├── MapsScreen.tsx      # Simplified map with pins + place preview
-│   │   ├── CollectionsScreen.tsx  # List / create / delete / share
-│   │   ├── ProfileScreen.tsx   # User info, stats, sign out
-│   │   └── AIChatbotScreen.tsx # Ask Loki chat (backed by /api/gpt)
-│   ├── place/PlaceDetailScreen.tsx        # Details + save to collection
-│   └── collection/CollectionDetailScreen.tsx  # Places in a collection + share
-├── navigation/AppNavigator.tsx # Auth gate → tabs + detail stack
+│   │   ├── BrowseScreen.tsx      # dashboard/browse (landing-variation) full port
+│   │   ├── MapsScreen.tsx        # dashboard/maps full port (WebView MapLibre)
+│   │   ├── CollectionsScreen.tsx # dashboard/collections + share-link flow
+│   │   └── ProfileScreen.tsx     # dashboard/profile (+ links to all static pages)
+│   ├── onboarding/OnboardingScreen.tsx  # 7-step quiz flow
+│   ├── collection/SharedCollectionScreen.tsx  # /collection/<token> (deep-linked)
+│   ├── dashboard/                # PlansScreen, VibesScreen
+│   └── static/                   # About, HowItWorks, Ambassadors, CookiePolicy,
+│                                 # PrivacyPolicy, Trial, Maintenance, Welcome
+├── components/
+│   ├── ui/                       # Button/Input/Dialog/Drawer/Sheet/AlertDialog/Badge/Avatar,
+│   │                             # AnimatedGradientText, glows (LightRays, Onboarding/Profile/
+│   │                             # Landing/CollectionBanner glow, AuthGradientFlow), ConfettiBurst
+│   ├── maps/                     # MapLibreMap (WebView bridge — Carto dark style, all marker
+│   │                             # types + popup cards), CollectionMap, MapsAreaSearch,
+│   │                             # MapsEntryInterstitial, maplibreHtml
+│   ├── collections/              # CollectionDetailView, CollectionDecideSection,
+│   │                             # CollectionSwipeDeck, CollectionMembers, CollaboratorManager
+│   ├── browse/                   # CuratedAlbums, ExploreSection, VibePlacesGrid
+│   ├── PlaceDetailsContent.tsx   # Place sheet content + CollectionSelectorDrawer
+│   ├── LokiChatSheet.tsx         # Ask Loki chat (+ LokiMarkdown, LokiRecommendations)
+│   ├── FullPageLoader.tsx        # Loki lottie loader
+│   └── LokiPeeker.tsx            # Landing-page lottie peeker
+├── navigation/AppNavigator.tsx   # Root stack (all pages) + floating-pill dashboard tabs,
+│                                 # deep links (loki:// + https://lokidxb.com)
 ├── lib/
-│   ├── firebase.ts             # Firebase init (RN persistence via AsyncStorage)
-│   ├── store.ts                # Zustand store (user, places, categories)
-│   ├── browseVibes.ts          # Curated vibe definitions (ported from web)
-│   ├── categories.ts           # Explore groups/subfilters (ported from web)
-│   ├── priceRange.ts           # Budget helpers (ported from web)
-│   ├── crypto.ts               # Share links via backend /api/encrypt
-│   ├── types.ts                # Shared TypeScript types
-│   └── utils.ts                # Gradients, greetings, misc helpers
-├── services/
-│   ├── authService.ts          # Sign in/up/out + account creation flow
-│   └── apiClient.ts            # Axios client for lokidxb.com/api/* (with auth header)
-├── constants/apiEndpoints.ts   # Endpoint + Firestore collection names
-├── types/firebase-auth-rn.d.ts # Type shim for firebase/auth's React Native build
-└── metro.config.js             # Disables watchman (broken by macOS permissions) — keep it
+│   ├── theme.ts                  # Exact web palette (oklch→sRGB), fonts, radii, shadows
+│   ├── firebase.ts               # Firebase init (RN persistence via AsyncStorage)
+│   ├── store.ts                  # Zustand store (user, places, categories, subfilters)
+│   ├── browseVibes.ts / categories.ts / exploreSubfilters.ts / priceRange.ts
+│   ├── placeBlurb.ts / placePresentation.ts / isActiveLimitedTimePopup.ts
+│   ├── collectionVoting.ts / collectionPersistence.ts / sharedCollections.ts
+│   ├── firebaseActions.ts        # getDocument/updateDocument/uploadImage
+│   ├── usePlaceImages.ts         # Image-readiness gate (places appear once photos load)
+│   ├── crypto.ts                 # Share links via backend /api/encrypt + /api/decrypt
+│   ├── dubaiSpots.ts / toast.ts / types.ts / utils.ts
+├── hooks/useExploreGroups.ts     # Built-in + admin-added explore taxonomy
+├── services/                     # authService, apiClient (lokidxb.com/api/*)
+├── assets/web/                   # logo2.png, lokianimation.json, ambassador.png
+├── assets/screenshots/           # Editorial-landing feature screenshots
+├── constants/apiEndpoints.ts
+├── types/firebase-auth-rn.d.ts
+└── metro.config.js               # Disables watchman (broken by macOS permissions) — keep it
 ```
 
 ## Verification (all currently passing)

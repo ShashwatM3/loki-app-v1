@@ -1,230 +1,299 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-} from 'react-native';
-import {
-  Card,
-  Button,
-  Divider,
-  List,
-  Avatar,
-} from 'react-native-paper';
-import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { View, Text, ScrollView, Pressable, StyleSheet, Animated } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
+import { ChevronRight } from 'lucide-react-native';
+import { Avatar } from '../../components/ui/Avatar';
+import { ProfileGlow } from '../../components/ui/glows';
 import { useCounterStore } from '../../lib/store';
 import authService from '../../services/authService';
+import { toast } from '../../lib/toast';
+import { colors, fonts, radius, tw } from '../../lib/theme';
 
+function FadeUp({ index, children }: { index: number; children: React.ReactNode }) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(24)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 550,
+        delay: index * 90,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 550,
+        delay: index * 90,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [index, opacity, translateY]);
+
+  return <Animated.View style={{ opacity, transform: [{ translateY }] }}>{children}</Animated.View>;
+}
+
+function ListGroup({
+  label,
+  items,
+  index,
+}: {
+  label: string;
+  items: { label: string; subtitle?: string; onPress: () => void }[];
+  index: number;
+}) {
+  return (
+    <FadeUp index={index}>
+      <Text style={styles.groupLabel}>{label}</Text>
+      <View style={styles.group}>
+        {items.map((item, i) => (
+          <Pressable
+            key={item.label}
+            onPress={item.onPress}
+            style={({ pressed }) => [
+              styles.groupRow,
+              i !== 0 && styles.groupRowBorder,
+              pressed && { backgroundColor: 'rgba(255,255,255,0.04)' },
+            ]}
+          >
+            <View style={{ minWidth: 0, flex: 1 }}>
+              <Text style={styles.groupRowLabel}>{item.label}</Text>
+              {item.subtitle ? <Text style={styles.groupRowSubtitle}>{item.subtitle}</Text> : null}
+            </View>
+            <ChevronRight size={14} color="rgba(134,134,134,0.35)" />
+          </Pressable>
+        ))}
+      </View>
+    </FadeUp>
+  );
+}
+
+/** 1:1 port of app/dashboard/profile/page.tsx (plus an in-app entry point to the
+ * marketing/legal pages, which on the web are reached by URL). */
 export default function ProfileScreen() {
+  const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
   const userData = useCounterStore((state) => state.userData);
+  const isAuthLoading = useCounterStore((state) => state.isAuthLoading);
   const setUserData = useCounterStore((state) => state.setUserData);
 
-  const totalSavedPlaces = userData.collections.reduce(
-    (sum, collection) => sum + collection.places.length,
-    0
-  );
+  // Guest access is not allowed on profile (web redirects to /Authentication).
+  useEffect(() => {
+    if (isFocused && !isAuthLoading && !userData.email) {
+      navigation.navigate('Authentication');
+    }
+  }, [isFocused, isAuthLoading, userData.email, navigation]);
 
   const handleSignOut = async () => {
     try {
       await authService.signOut();
-      // Clearing the user flips the navigator back to the Login screen automatically
       setUserData({ name: '', email: '', photo: '', collections: [] });
+      navigation.navigate('Authentication');
+      toast.success('Signed out');
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('Sign out error:', error);
+      toast.error('Failed to sign out');
     }
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  const initials = useMemo(
+    () =>
+      userData.name
+        ? userData.name
+            .split(' ')
+            .map((n: string) => n[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 2)
+        : '?',
+    [userData.name]
+  );
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Profile Header */}
-      <View style={styles.header}>
-        <View style={styles.avatarContainer}>
-          {userData.photo ? (
-            <Image source={{ uri: userData.photo }} style={styles.avatar} />
-          ) : (
-            <Avatar.Text
-              size={80}
-              label={getInitials(userData.name || 'User')}
-              style={styles.avatar}
-            />
-          )}
+    <View style={styles.root}>
+      <ProfileGlow />
+
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 112 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Hero */}
+        <View style={[styles.hero, { paddingTop: insets.top + 56 }]}>
+          <FadeUp index={0}>
+            <View style={styles.avatarGlow}>
+              <Avatar
+                size={72}
+                uri={userData.photo}
+                fallback={initials}
+                fallbackColor={tw.violet500}
+                fallbackTextStyle={{ fontSize: 18, fontFamily: fonts.sansBold }}
+                style={styles.avatarRing}
+              />
+            </View>
+          </FadeUp>
+
+          <FadeUp index={1}>
+            <Text style={styles.name}>{userData.name || 'Explorer'}</Text>
+          </FadeUp>
+
+          <FadeUp index={2}>
+            <Text style={styles.email}>{userData.email}</Text>
+          </FadeUp>
         </View>
-        <Text style={styles.name}>{userData.name}</Text>
-        <Text style={styles.email}>{userData.email}</Text>
-      </View>
 
-      {/* Statistics */}
-      <Card style={styles.statsCard}>
-        <Card.Content style={styles.statsContent}>
-          <View style={styles.statItem}>
-            <Icon name="map-marker" size={32} color="#6366f1" />
-            <Text style={styles.statNumber}>{totalSavedPlaces}</Text>
-            <Text style={styles.statLabel}>Places Saved</Text>
-          </View>
-          <Divider style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Icon name="book" size={32} color="#6366f1" />
-            <Text style={styles.statNumber}>{userData.collections.length}</Text>
-            <Text style={styles.statLabel}>Collections</Text>
-          </View>
-        </Card.Content>
-      </Card>
-
-      {/* Account Settings */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account</Text>
-        <Card>
-          <List.Item
-            title="Help & Support"
-            description="Get help with the app"
-            left={(props) => <List.Icon {...props} icon="help-circle" />}
-            onPress={() => console.log('Help pressed')}
+        {/* Menu groups */}
+        <View style={styles.groups}>
+          <ListGroup
+            label="Account"
+            index={3}
+            items={[
+              { label: 'Help & Support', subtitle: "Questions? We're here.", onPress: () => {} },
+              { label: 'Suggest a Venue', subtitle: 'Know a hidden gem?', onPress: () => {} },
+            ]}
           />
-          <Divider />
-          <List.Item
-            title="Suggest a Venue"
-            description="Add a new place to Loki"
-            left={(props) => <List.Icon {...props} icon="plus-circle" />}
-            onPress={() => console.log('Suggest venue pressed')}
-          />
-        </Card>
-      </View>
 
-      {/* Legal */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Legal</Text>
-        <Card>
-          <List.Item
-            title="Terms of Service"
-            left={(props) => <List.Icon {...props} icon="file-document" />}
-            onPress={() => console.log('Terms pressed')}
+          <ListGroup
+            label="Legal"
+            index={4}
+            items={[
+              { label: 'Terms & Conditions', onPress: () => navigation.navigate('CookiePolicy') },
+              { label: 'Privacy Policy', onPress: () => navigation.navigate('PrivacyPolicy') },
+            ]}
           />
-          <Divider />
-          <List.Item
-            title="Privacy Policy"
-            left={(props) => <List.Icon {...props} icon="shield-account" />}
-            onPress={() => console.log('Privacy pressed')}
+
+          <ListGroup
+            label="Loki"
+            index={5}
+            items={[
+              { label: 'About Loki', subtitle: 'Your local friend for Dubai', onPress: () => navigation.navigate('About') },
+              { label: 'How it works', onPress: () => navigation.navigate('HowItWorks') },
+              { label: 'Community Ambassadors', onPress: () => navigation.navigate('Ambassadors') },
+              { label: 'Your Plans', onPress: () => navigation.navigate('Plans') },
+              { label: 'Vibe picker', subtitle: "What's the vibe tonight?", onPress: () => navigation.navigate('Vibes') },
+              { label: 'Upload an image', subtitle: 'Trial upload page', onPress: () => navigation.navigate('Trial') },
+              { label: 'Maintenance preview', onPress: () => navigation.navigate('Maintenance') },
+            ]}
           />
-        </Card>
-      </View>
 
-      {/* Sign Out */}
-      <View style={styles.section}>
-        <Button
-          mode="contained"
-          onPress={handleSignOut}
-          style={styles.signOutButton}
-          icon="logout"
-        >
-          Sign Out
-        </Button>
-      </View>
-
-      {/* Version Info */}
-      <View style={styles.footer}>
-        <Text style={styles.version}>Loki App v1.0.0</Text>
-        <Text style={styles.copyright}>© 2024 Loki</Text>
-      </View>
-    </ScrollView>
+          {/* Sign out */}
+          <FadeUp index={6}>
+            <View style={styles.signOutWrap}>
+              <Pressable
+                onPress={handleSignOut}
+                style={({ pressed }) => [
+                  styles.signOutBtn,
+                  pressed && { backgroundColor: 'rgba(251,44,54,0.06)' },
+                ]}
+              >
+                <Text style={styles.signOutText}>Sign out</Text>
+              </Pressable>
+            </View>
+          </FadeUp>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: colors.background,
   },
-  header: {
+  hero: {
+    zIndex: 10,
     alignItems: 'center',
-    padding: 20,
-    paddingTop: 60,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    paddingHorizontal: 24,
+    paddingBottom: 48,
   },
-  avatarContainer: {
-    marginBottom: 16,
+  avatarGlow: {
+    marginBottom: 20,
+    shadowColor: 'rgba(168,124,254,1)',
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 10,
   },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+  avatarRing: {
+    borderWidth: 1.5,
+    borderColor: 'rgba(166,132,255,0.3)',
   },
   name: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#111827',
+    fontSize: 22,
+    fontFamily: fonts.sansBold,
+    letterSpacing: -0.55,
+    color: colors.foreground,
+    textAlign: 'center',
   },
   email: {
-    fontSize: 14,
-    color: '#6b7280',
     marginTop: 4,
+    fontSize: 13,
+    color: 'rgba(134,134,134,0.7)',
+    fontFamily: fonts.sans,
+    textAlign: 'center',
   },
-  statsCard: {
-    margin: 20,
-    marginTop: 20,
-    elevation: 2,
+  groups: {
+    zIndex: 10,
+    width: '100%',
+    maxWidth: 384,
+    alignSelf: 'center',
+    gap: 28,
+    paddingHorizontal: 20,
   },
-  statsContent: {
+  groupLabel: {
+    marginBottom: 10,
+    paddingHorizontal: 4,
+    fontSize: 16,
+    fontFamily: fonts.serif,
+    fontStyle: 'italic',
+    color: 'rgba(134,134,134,0.6)',
+  },
+  group: {
+    overflow: 'hidden',
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.07)',
+    backgroundColor: 'rgba(255,255,255,0.025)',
+  },
+  groupRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 20,
-  },
-  statItem: {
     alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
   },
-  statNumber: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginTop: 8,
+  groupRowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.05)',
   },
-  statLabel: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginTop: 4,
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: '#e5e7eb',
-  },
-  section: {
-    marginHorizontal: 20,
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 12,
-  },
-  signOutButton: {
-    backgroundColor: '#ef4444',
-  },
-  footer: {
-    alignItems: 'center',
-    paddingVertical: 40,
-    paddingBottom: 60,
-  },
-  version: {
+  groupRowLabel: {
     fontSize: 14,
-    color: '#6b7280',
+    fontFamily: fonts.sansMedium,
+    color: 'rgba(232,232,232,0.9)',
   },
-  copyright: {
+  groupRowSubtitle: {
+    marginTop: 2,
     fontSize: 12,
-    color: '#9ca3af',
-    marginTop: 4,
+    color: 'rgba(134,134,134,0.6)',
+    fontFamily: fonts.sans,
+  },
+  signOutWrap: {
+    alignItems: 'center',
+    gap: 20,
+    paddingTop: 4,
+  },
+  signOutBtn: {
+    borderRadius: radius.lg,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+  },
+  signOutText: {
+    fontSize: 14,
+    color: 'rgba(255,100,103,0.6)', // red-400/60
+    fontFamily: fonts.sans,
   },
 });

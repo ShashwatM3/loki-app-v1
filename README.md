@@ -119,14 +119,16 @@ loki-app/
 ├── services/
 │   ├── authService.ts          # Sign in/up/out + account creation flow
 │   └── apiClient.ts            # Axios client for lokidxb.com/api/* (with auth header)
-└── constants/apiEndpoints.ts   # Endpoint + Firestore collection names
+├── constants/apiEndpoints.ts   # Endpoint + Firestore collection names
+├── types/firebase-auth-rn.d.ts # Type shim for firebase/auth's React Native build
+└── metro.config.js             # Disables watchman (broken by macOS permissions) — keep it
 ```
 
 ## Verification (all currently passing)
 
 ```bash
 npx tsc --noEmit        # type-checks clean
-npx expo-doctor         # 21/21 checks pass
+npx expo-doctor         # 18/18 checks pass
 npx expo start          # bundles clean for iOS and Android
 ```
 

@@ -11,7 +11,7 @@ cd loki-app
 npx expo start
 ```
 
-1. Open **Expo Go** on your phone (latest version from the App Store / Play Store)
+1. Open **Expo Go** on your phone (the normal App Store / Play Store version — this project targets **SDK 54**, the exact version the store builds support)
 2. Scan the QR code from the terminal (phone and Mac must be on the same Wi-Fi)
 3. Sign in with the ready-made demo account:
 
@@ -52,9 +52,8 @@ npx expo start
 
 Requirements:
 - **Node 20+** (tested on Node 24)
-- **Latest Expo Go** on your phone — this project is **Expo SDK 57**, which matches the current store version of Expo Go
+- **Expo Go from the App Store / Play Store** — this project is pinned to **Expo SDK 54** on purpose: the store versions of Expo Go stop at SDK 54 (Expo has not shipped SDK 55+ Expo Go to the stores — see [Expo's changelog](https://expo.dev/changelog/expo-go-and-app-store-may-2026)). A newer SDK will show "Project is incompatible with this version of Expo Go" no matter how recent your Expo Go install is.
 - Phone and computer on the **same Wi-Fi network**
-- macOS only: `brew install watchman` (prevents "EMFILE: too many open files" from Metro; already installed on this machine)
 
 No Firebase console changes, no `google-services.json`, no prebuild, no native folders. The `.env` file is committed with working values (they are the same public client keys the website ships to every browser).
 
@@ -137,8 +136,9 @@ npx expo start          # bundles clean for iOS and Android
 
 | Problem | Fix |
 |---|---|
-| `Project is incompatible with this version of Expo Go` | Update Expo Go from the store — this project targets SDK 57 (the current one) |
-| `EMFILE: too many open files, watch` | `brew install watchman`, then restart `npx expo start` |
+| `Project is incompatible with this version of Expo Go` | This project must stay on **SDK 54** — the store versions of Expo Go do not support SDK 55+. If you upgrade the SDK, you must sideload a matching Expo Go from [expo.dev/go](https://expo.dev/go) (Android only) |
+| Metro hangs on "Waiting on http://localhost:8081" for minutes | Watchman is blocked by macOS privacy permissions for `~/Desktop`. This repo disables watchman in `metro.config.js` (`resolver.useWatchman = false`) — don't remove that line, or grant watchman Full Disk Access |
+| `EMFILE: too many open files, watch` | Only happens on old Expo SDKs; SDK 54's Metro watcher handles this. `npx expo start --clear` if it persists |
 | Port 8081 already in use | `lsof -ti :8081 \| xargs kill -9` |
 | Stale/weird bundler state | `npx expo start --clear` |
 | Phone can't connect | Make sure phone + Mac are on the same Wi-Fi; try `npx expo start --tunnel` |

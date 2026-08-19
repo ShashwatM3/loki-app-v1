@@ -35,6 +35,12 @@ Expo Go from https://expo.dev/go (Android only).
   live in the `sharedCollections` collection; votes/live locations persist through
   `lib/collectionPersistence.ts` exactly like the web.
 - Admin pages and Hyperframes overlays are intentionally NOT ported (user decision 2026-08-15).
+- npm installs: sonner-native@0.26.4 declares peer react-native-worklets>=0.6.1 while Expo
+  SDK 54 pins worklets 0.5.1 (runtime-compatible; expo-doctor passes). Plain `npm install <pkg>`
+  hits ERESOLVE — install new packages with `npx expo install <pkg> -- --legacy-peer-deps`.
+- Deep links: react-navigation prefixes include `ExpoLinking.createURL('/')` so links work in
+  Expo Go as `exp://<host>:8081/--/<path>`; `loki://` + `https://lokidxb.com` prefixes only
+  resolve in a standalone/dev build.
 - Watchman is BROKEN on this machine (macOS privacy permissions block it from ~/Desktop;
   its crawl hangs ~55 min then fails with "Interrupted system call"). metro.config.js sets
   `resolver.useWatchman = false` — keep it that way.

@@ -8,6 +8,7 @@ import {
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator, type BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import * as ExpoLinking from 'expo-linking';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Home, MapPin, Library, User, type LucideIcon } from 'lucide-react-native';
 
@@ -132,7 +133,9 @@ function DashboardTabs() {
 }
 
 const linking: LinkingOptions<RootStackParamList> = {
-  prefixes: ['loki://', 'https://lokidxb.com'],
+  // ExpoLinking.createURL('/') resolves to `loki://` in a standalone build and to
+  // `exp://<host>/--/` inside Expo Go — without it deep links never match in Expo Go.
+  prefixes: [ExpoLinking.createURL('/'), 'loki://', 'https://lokidxb.com'],
   config: {
     screens: {
       Landing: '',

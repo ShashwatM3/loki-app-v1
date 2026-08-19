@@ -166,10 +166,14 @@ Do these in order. Each line tells you exactly where to tap and what you must se
       same as the website.)
 
 ### 3.5 Shared collection page (the /collection/<token> page)
-- [ ] From the "Link ready" screen, copy a share link. Then open it on the phone: the easiest
-      manual way is to paste the token into this URL scheme in Safari/Chrome on the phone:
-      `loki://collection/<the-long-token-part-of-the-link>` — or simply tap the
-      `https://lokidxb.com/collection/...` link you shared to a chat app on the same phone.
+- [ ] From the "Link ready" screen, copy a share link (it looks like
+      `https://lokidxb.com/collection/<long-token>`). Tapping that https link on a phone opens
+      the **website** — that's expected (universal links into the app need a store build).
+      To open the same page **inside the app while it runs in Expo Go**: on the phone, open
+      Safari/Chrome and go to `exp://<YOUR-MAC-IP>:8081/--/collection/<long-token>` (the exact
+      `exp://…:8081` base is printed in the terminal right under the QR code — just add
+      `/--/collection/<token>` after it). In a future standalone build the short form
+      `loki://collection/<token>` works directly.
 - [ ] First open asks **"Who's here?"** — type a name, pick an emoji animal, **Continue**.
 - [ ] You should see: the collection map, **"The lineup"** grid with Info-expandable cards,
       **"Start swiping to pick a spot"** deck, and the **Leaderboard**. After ~3 seconds a

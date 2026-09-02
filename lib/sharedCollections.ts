@@ -19,6 +19,8 @@ export interface SharedCollectionDoc {
   sourceCollectionName?: string;
   votes?: Record<string, Record<string, 'yes' | 'no'>>;
   participantLocations?: Record<string, ParticipantLocation>;
+  /** participantId -> days they marked themselves free. */
+  availability?: Record<string, { name?: string; avatar?: string; photo?: string; dates: string[] }>;
   createdAt: string;
   updatedAt: string;
 }

@@ -1,0 +1,147 @@
+{
+  "schema": "model-validation.json/v1",
+  "spec_path": "examples/example.target-spec.json",
+  "fsm_path": "examples/example.fsm.json",
+  "result": "PASS",
+  "error_count": 0,
+  "warning_count": 1,
+  "errors": [],
+  "warnings": [
+    {
+      "check": "F10",
+      "subject": "action 'confirm_cancel'",
+      "message": "durable write is gated by transient variable 'cancel_dialog_open'; confirm the gate is presentation-only"
+    }
+  ],
+  "metrics": {
+    "spec": {
+      "spec_version": 1,
+      "entities": 2,
+      "fields": 6,
+      "relationships": 1,
+      "operations": 3,
+      "write_operations": 1,
+      "pages": 3,
+      "pages_by_scope": {
+        "Core": 2,
+        "Shell-only": 1,
+        "Supporting": 0
+      },
+      "actors": 1,
+      "assumptions_total": 1,
+      "assumptions_open": 1,
+      "declared_collections": 2,
+      "declared_empty_pages": 1,
+      "total_declared_min_rows": 15,
+      "lowest_floor": 3,
+      "evidence_distribution": {
+        "A": 13,
+        "B": 1,
+        "C": 0,
+        "missing": 0
+      }
+    },
+    "fsm": {
+      "fsm_version": 1,
+      "pages": 3,
+      "pages_by_scope": {
+        "Core": 2,
+        "Shell-only": 1,
+        "Supporting": 0
+      },
+      "signature_variables": 5,
+      "signature_durable": 1,
+      "signature_transient": 4,
+      "actions": 9,
+      "navigation_actions": 4,
+      "intra_page_actions": 5,
+      "write_actions": 1,
+      "goals": 1,
+      "mean_out_degree": 3.0,
+      "max_out_degree": 4,
+      "unique_selectors": 9,
+      "exempt_pages": 0,
+      "exempt_core_pages": 0,
+      "exempt_core_share": 0.0,
+      "evidence_distribution": {
+        "A": 14,
+        "B": 3,
+        "C": 0,
+        "missing": 0
+      },
+      "core_nodes_above_level_a": 1
+    },
+    "traversal": {
+      "reachable_states_bounded": 8,
+      "bound_hit": false,
+      "max_states": 20000,
+      "max_depth": 12,
+      "actions_covered": 9,
+      "actions_unreachable": 0,
+      "canonical_action_traversals": 9,
+      "canonical_action_steps": 16,
+      "goals_reachable": 1,
+      "goals_unreachable": 0,
+      "goals_uncheckable": 0,
+      "goal_traversal_lengths": {
+        "G_reservation_cancelled": 3
+      }
+    },
+    "inventory": {
+      "exempt": 1,
+      "behavioural": 6,
+      "excluded": 1,
+      "static": 3,
+      "unassigned": 0
+    }
+  },
+  "canonical_traversals": {
+    "action_coverage": {
+      "filter_upcoming": [
+        "filter_upcoming"
+      ],
+      "next_trips_page": [
+        "next_trips_page"
+      ],
+      "open_trip": [
+        "open_trip"
+      ],
+      "open_help": [
+        "open_help"
+      ],
+      "open_cancel_dialog": [
+        "open_trip",
+        "open_cancel_dialog"
+      ],
+      "back_to_trips": [
+        "open_trip",
+        "back_to_trips"
+      ],
+      "help_back_to_trips": [
+        "open_help",
+        "help_back_to_trips"
+      ],
+      "dismiss_cancel_dialog": [
+        "open_trip",
+        "open_cancel_dialog",
+        "dismiss_cancel_dialog"
+      ],
+      "confirm_cancel": [
+        "open_trip",
+        "open_cancel_dialog",
+        "confirm_cancel"
+      ]
+    },
+    "goals": {
+      "G_reservation_cancelled": {
+        "reachable": true,
+        "length": 3,
+        "path": [
+          "open_trip",
+          "open_cancel_dialog",
+          "confirm_cancel"
+        ]
+      }
+    }
+  }
+}

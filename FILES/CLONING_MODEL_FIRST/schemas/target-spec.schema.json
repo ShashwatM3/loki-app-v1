@@ -1,0 +1,697 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "target-spec.schema.json",
+  "title": "Target Model Specification",
+  "description": "What the target product stores, what operations it exposes, and what pages exist to reach them. Extracted from target evidence, never generated from a seed. Produced in Phase 4 of CLONING_MODEL_FIRST/AUTONOMOUS_CLONE_BUILDING.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "clone_id",
+    "spec_version",
+    "target",
+    "entities",
+    "relationships",
+    "operations",
+    "pages",
+    "chrome",
+    "actors",
+    "clock",
+    "assumptions"
+  ],
+  "properties": {
+    "schema": {
+      "const": "target-spec.json/v1"
+    },
+    "clone_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "spec_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "canonical_product_name",
+        "target_url"
+      ],
+      "properties": {
+        "canonical_product_name": {
+          "type": "string"
+        },
+        "target_url": {
+          "type": "string"
+        },
+        "locale_observed": {
+          "type": "string"
+        },
+        "observed_between": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      }
+    },
+    "entities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "table",
+          "fields",
+          "evidence"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "table": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "reference_only": {
+            "type": "boolean",
+            "default": false,
+            "description": "True when the entity is modelled for completeness but no operation touches it. Exempts it from cross-artifact check X5."
+          },
+          "lifecycle_states": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "seed_density": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "amount",
+              "capability"
+            ],
+            "properties": {
+              "amount": {
+                "enum": [
+                  "one",
+                  "few",
+                  "many"
+                ]
+              },
+              "capability": {
+                "type": "string",
+                "description": "The product capability this density exists to exercise: lists, filters, ordering, pagination, empty states, permission variants, relational edge cases."
+              },
+              "observed_target_count": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Rows the target was observed to hold or expose for this entity, where observable. A floor with no observed count behind it is an assumption and belongs in the assumptions register."
+              }
+            },
+            "description": "How much of this entity the base world needs. `amount` is a summary; the binding numbers are the per-collection `min_rows` floors on pages. Allowances: `one` permits a maximum page floor of 1, `few` permits 5, `many` permits any."
+          },
+          "fields": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "name",
+                "type",
+                "evidence"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "type": {
+                  "enum": [
+                    "string",
+                    "number",
+                    "integer",
+                    "boolean",
+                    "enum",
+                    "datetime",
+                    "date",
+                    "json",
+                    "blob"
+                  ]
+                },
+                "primary_key": {
+                  "type": "boolean",
+                  "default": false
+                },
+                "required": {
+                  "type": "boolean",
+                  "default": false
+                },
+                "enum_domain": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "enum_complete": {
+                  "type": "boolean",
+                  "description": "False when only part of the target's vocabulary was observed. Pair with an assumptions entry."
+                },
+                "evidence": {
+                  "$ref": "#/$defs/evidence"
+                }
+              }
+            }
+          },
+          "invariants": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "Stated in product language; becomes a schema constraint and a protected-state invariant."
+            }
+          },
+          "evidence": {
+            "$ref": "#/$defs/evidence"
+          }
+        }
+      }
+    },
+    "relationships": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "from",
+          "to",
+          "type",
+          "field"
+        ],
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "belongs_to",
+              "has_one",
+              "has_many",
+              "many_to_many"
+            ]
+          },
+          "field": {
+            "type": "string",
+            "description": "The field carrying the relationship, on the `from` entity unless `via` is set."
+          },
+          "via": {
+            "type": "string",
+            "description": "Join entity name for many_to_many."
+          },
+          "evidence": {
+            "$ref": "#/$defs/evidence"
+          }
+        }
+      }
+    },
+    "operations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "parameters",
+          "reads",
+          "writes",
+          "evidence"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+\\.[a-z0-9_]+$",
+            "description": "noun.verb"
+          },
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "read",
+              "write"
+            ]
+          },
+          "parameters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "name",
+                "type",
+                "source"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "source": {
+                  "enum": [
+                    "user",
+                    "system"
+                  ],
+                  "description": "system-managed parameters are resolved from the session and injected clock and must never be accepted from the client."
+                },
+                "required": {
+                  "type": "boolean",
+                  "default": true
+                }
+              }
+            }
+          },
+          "reads": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "Entity name."
+            }
+          },
+          "writes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "Entity name. Empty for kind=read."
+            }
+          },
+          "invariants": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "idempotency": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "mode"
+            ],
+            "properties": {
+              "mode": {
+                "enum": [
+                  "natural",
+                  "keyed"
+                ],
+                "description": "natural: repetition is a legitimate product action. keyed: a repeat must be absorbed."
+              },
+              "key": {
+                "type": "string",
+                "description": "Required when mode is keyed."
+              }
+            }
+          },
+          "ledger_action": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+\\.[a-z0-9_]+$",
+            "description": "Required and unique for kind=write. Identifies the transition in the durable ledger."
+          },
+          "evidence": {
+            "$ref": "#/$defs/evidence"
+          }
+        }
+      }
+    },
+    "pages": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "route",
+          "name",
+          "scope_class",
+          "operations",
+          "evidence"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "route": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "scope_class": {
+            "enum": [
+              "Core",
+              "Supporting",
+              "Shell-only"
+            ]
+          },
+          "actor_roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "operations": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "Operation id."
+            }
+          },
+          "incoming_params": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "outgoing": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "target"
+              ],
+              "properties": {
+                "target": {
+                  "type": "string",
+                  "description": "Page id, or 'BOUNDARY' when the control leaves declared scope."
+                },
+                "params": {
+                  "type": "object"
+                },
+                "boundary_treatment": {
+                  "enum": [
+                    "target_like_unavailable_state",
+                    "consistently_removed"
+                  ],
+                  "description": "Required when target is BOUNDARY."
+                },
+                "boundary_reason": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "access": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "model_exempt": {
+            "$ref": "#/$defs/model_exempt"
+          },
+          "evidence": {
+            "$ref": "#/$defs/evidence"
+          },
+          "density": {
+            "type": "array",
+            "description": "One entry per collection this page renders. An empty array is a statement that the page renders no collection, not an omission. Governed by the surface density budget in ../CLONING/HIGH_FIDELITY_WEBSITE_CLONING.md section 1.4.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "collection",
+                "entity",
+                "surface_kind",
+                "min_rows"
+              ],
+              "properties": {
+                "collection": {
+                  "type": "string",
+                  "description": "What the collection is called on screen."
+                },
+                "entity": {
+                  "type": "string",
+                  "description": "Entity name behind the rows."
+                },
+                "surface_kind": {
+                  "enum": [
+                    "page_list",
+                    "pane",
+                    "menu",
+                    "detail_child"
+                  ],
+                  "description": "Sets the default floor: page_list 12, pane 5, menu 3, detail_child 3."
+                },
+                "observed_target_first_paint": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0,
+                  "description": "Rows the target rendered on first paint at the reference viewport."
+                },
+                "paginates": {
+                  "type": "boolean",
+                  "default": false
+                },
+                "page_size": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 1
+                },
+                "min_rows": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "The floor the clone must meet. Where the surface paginates, at least two full pages plus a partial third."
+                },
+                "override_reason": {
+                  "type": "string",
+                  "description": "Required when min_rows is below the default floor for its surface_kind."
+                }
+              }
+            }
+          },
+          "declared_empty": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "reason"
+            ],
+            "description": "This page is genuinely empty in the product \u2014 an empty trash, a cleared tray, a first-run screen. Exempts it from its floor. Empty states are declared, never accidental.",
+            "properties": {
+              "reason": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "chrome": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "header_links": {
+          "$ref": "#/$defs/chrome_links"
+        },
+        "footer_links": {
+          "$ref": "#/$defs/chrome_links"
+        },
+        "rail_links": {
+          "$ref": "#/$defs/chrome_links"
+        }
+      }
+    },
+    "actors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "role",
+          "seeded"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "seeded": {
+            "type": "boolean"
+          },
+          "differences": {
+            "type": "string"
+          },
+          "evidence": {
+            "$ref": "#/$defs/evidence"
+          }
+        }
+      }
+    },
+    "clock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "frozen_now",
+        "timezone",
+        "locale",
+        "currency",
+        "reason"
+      ],
+      "properties": {
+        "frozen_now": {
+          "type": "string"
+        },
+        "timezone": {
+          "type": "string"
+        },
+        "locale": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Why this instant. Must name the product states the instant makes non-empty."
+        }
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "description": "First-class deliverable. Anything asserted without target evidence lives here, never inside a field as though observed.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "subject",
+          "statement",
+          "why_unobservable",
+          "risk_if_wrong"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^AS-[0-9]{3,}$"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "statement": {
+            "type": "string"
+          },
+          "why_unobservable": {
+            "type": "string"
+          },
+          "risk_if_wrong": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "open",
+              "resolved"
+            ],
+            "default": "open"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "level",
+        "ref"
+      ],
+      "properties": {
+        "level": {
+          "enum": [
+            "A",
+            "B",
+            "C"
+          ],
+          "description": "A: directly observed rendered behaviour, authenticated API response, captured DOM, or safely exercised interaction. B: official documentation, target-owned preview, frozen capture. C: licensed reference or conservative recorded inference."
+        },
+        "ref": {
+          "type": "string",
+          "description": "URL or local evidence path."
+        },
+        "observed_at": {
+          "type": "string"
+        }
+      }
+    },
+    "chrome_links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "text",
+          "target"
+        ],
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string",
+            "description": "Page id, or 'BOUNDARY'."
+          },
+          "boundary_treatment": {
+            "enum": [
+              "target_like_unavailable_state",
+              "consistently_removed"
+            ]
+          },
+          "boundary_reason": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "model_exempt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reason",
+        "fidelity_treatment"
+      ],
+      "properties": {
+        "reason": {
+          "type": "string"
+        },
+        "fidelity_treatment": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

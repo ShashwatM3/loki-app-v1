@@ -10,6 +10,7 @@ import {
   Trash,
   Map as MapIcon,
   X,
+  CalendarDays,
 } from 'lucide-react-native';
 import { Button } from '../ui/Button';
 import { Dialog, DialogHeader, DialogTitle } from '../ui/Dialog';
@@ -22,6 +23,15 @@ import { PlaceDetailsContent } from '../PlaceDetailsContent';
 import { CollectionDecideSection } from './CollectionDecideSection';
 import { CollectionMap } from '../maps/CollectionMap';
 import { canEditCollection } from '../../lib/sharedCollections';
+import { AvailabilityCalendar } from './AvailabilityCalendar';
+import { persistAvailability } from '../../lib/collectionPersistence';
+import {
+  availabilityWindow,
+  bestDays,
+  formatDayLabel,
+  tallyAvailability,
+  type CollectionAvailability,
+} from '../../lib/collectionAvailability';
 import { colors, fonts, radius, tw } from '../../lib/theme';
 import type { MapPopupSpec } from '../maps/MapLibreMap';
 import type { CollectionType, Place } from '../../lib/types';
@@ -183,6 +193,32 @@ export function CollectionDetailView({
   const [detailPlace, setDetailPlace] = React.useState<Place | null>(null);
   const [inviteOpen, setInviteOpen] = React.useState(false);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
+  const [availability, setAvailability] = React.useState<CollectionAvailability>(
+    activeCollection?.availability || {}
+  );
+
+  // Re-seed when a different collection is opened or remote availability changes.
+  React.useEffect(() => {
+    setAvailability(activeCollection?.availability || {});
+  }, [activeCollection?.sharedCollectionId, activeCollection?.name, activeCollection?.availability]);
+
+  const myAvailabilityId = userData.email;
+
+  const handleToggleDay = React.useCallback(
+    (_dayKey: string, dates: string[]) => {
+      const entry = { name: userData.name || userData.email, photo: userData.photo, dates };
+      setAvailability((prev) => ({ ...prev, [myAvailabilityId]: entry }));
+      persistAvailability(activeCollection, myAvailabilityId, entry, userData.email).catch((e) =>
+        console.error('Failed to save availability:', e)
+      );
+    },
+    [activeCollection, myAvailabilityId, userData.email, userData.name, userData.photo]
+  );
+
+  const topDays = React.useMemo(
+    () => bestDays(tallyAvailability(availability, availabilityWindow())),
+    [availability]
+  );
 
   const accentHue = React.useMemo(
     () => inferCollectionHue(activeCollection || {}),
@@ -371,6 +407,25 @@ export function CollectionDetailView({
             </View>
           </View>
         ) : null}
+
+        {/* When is everyone free — two weeks at a time */}
+        <View style={{ paddingHorizontal: 16, marginTop: 40 }}>
+          <AvailabilityCalendar
+            availability={availability}
+            myId={myAvailabilityId}
+            onToggleDay={handleToggleDay}
+          />
+          {topDays.length > 0 ? (
+            <View style={styles.whenCard}>
+              <CalendarDays size={16} color={tw.emerald400} style={{ marginTop: 2 }} />
+              <Text style={styles.whenText}>
+                <Text style={styles.whenTextStrong}>When: </Text>
+                {topDays.map((d) => formatDayLabel(d.date)).join(' · ')}
+                <Text style={styles.whenTextMuted}> · {topDays[0].people.length} free</Text>
+              </Text>
+            </View>
+          ) : null}
+        </View>
 
         {/* Delete Collection */}
         {canManage && activeCollection.name !== 'Favorites' ? (
@@ -617,6 +672,33 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: tw.red400,
     fontFamily: fonts.sansMedium,
+  },
+  // web: mt-3 flex items-start gap-2 rounded-2xl border-white/5 bg-neutral-900/60 p-3
+  whenCard: {
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    borderRadius: radius['2xl'],
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(23,23,23,0.6)',
+    padding: 12,
+  },
+  // text-sm text-neutral-300
+  whenText: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
+    color: tw.neutral300,
+    fontFamily: fonts.sans,
+  },
+  whenTextStrong: {
+    fontFamily: fonts.sansBold,
+    color: '#ffffff',
+  },
+  whenTextMuted: {
+    color: tw.neutral500,
   },
   detailModalWrap: {
     flex: 1,

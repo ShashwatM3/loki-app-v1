@@ -67,6 +67,8 @@ export interface CollectionType {
   isOwner?: boolean;
   votes?: Record<string, Record<string, "yes" | "no">>;
   participantLocations?: Record<string, ParticipantLocation>;
+  /** participantId -> days they marked themselves free (web: CollectionAvailability). */
+  availability?: Record<string, { name?: string; avatar?: string; photo?: string; dates: string[] }>;
 }
 
 // Participant Location interface
@@ -78,6 +80,17 @@ export interface ParticipantLocation {
   updatedAt: string;
 }
 
+// A place the user booked, with the date they booked it for (web: app/store.ts EventBooking).
+export interface EventBooking {
+  id: string;
+  placeName: string;
+  location?: string;
+  /** Local date+time as `YYYY-MM-DDTHH:mm`. */
+  startsAt: string;
+  reminderMinutesBefore?: number;
+  createdAt: string;
+}
+
 // User Data interface
 export interface UserData {
   name: string;
@@ -85,6 +98,7 @@ export interface UserData {
   photo: string;
   collections: CollectionType[];
   sharedCollections?: CollectionType[];
+  bookings?: EventBooking[];
   admin?: boolean;
 }
 

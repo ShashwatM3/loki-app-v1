@@ -90,7 +90,7 @@ export function PlaceDetailsContent({ place, onClose, isDrawer }: PlaceDetailsCo
               onPress={() => setShowCollectionDrawer(true)}
             >
               <Plus size={20} color={colors.foreground} />
-              <Text style={styles.outlineBtnText}>Add to Collection</Text>
+              <Text numberOfLines={1} style={styles.outlineBtnText}>Add to Collection</Text>
             </Button>
             {place.website ? (
               <Button
@@ -208,6 +208,7 @@ const styles = StyleSheet.create({
     flexBasis: '47%',
     flexGrow: 1,
     height: 36, // h-9
+    paddingHorizontal: 12,
   },
   gridButtonFull: {
     flexBasis: '100%',

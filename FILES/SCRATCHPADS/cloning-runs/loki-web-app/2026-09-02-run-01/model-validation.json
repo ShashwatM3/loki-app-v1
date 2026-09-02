@@ -1,0 +1,679 @@
+{
+  "schema": "model-validation.json/v1",
+  "spec_path": "target-spec.json",
+  "fsm_path": "fsm.json",
+  "result": "PASS",
+  "error_count": 0,
+  "warning_count": 12,
+  "errors": [],
+  "warnings": [
+    {
+      "check": "S2",
+      "subject": "entity 'Collection' field 'access'",
+      "message": "enum_domain declared incomplete; confirm a matching assumptions entry exists"
+    },
+    {
+      "check": "F10",
+      "subject": "action 'place_toggle_collection'",
+      "message": "durable write is gated by transient variable 'collection_selector'; confirm the gate is presentation-only"
+    },
+    {
+      "check": "F10",
+      "subject": "action 'collections_create'",
+      "message": "durable write is gated by transient variable 'create_collection_dialog'; confirm the gate is presentation-only"
+    },
+    {
+      "check": "F10",
+      "subject": "action 'collection_delete'",
+      "message": "durable write is gated by transient variable 'delete_dialog'; confirm the gate is presentation-only"
+    },
+    {
+      "check": "F10",
+      "subject": "action 'collab_add'",
+      "message": "durable write is gated by transient variable 'collab_open'; confirm the gate is presentation-only"
+    },
+    {
+      "check": "F10",
+      "subject": "action 'collab_remove'",
+      "message": "durable write is gated by transient variable 'collab_open'; confirm the gate is presentation-only"
+    },
+    {
+      "check": "F10",
+      "subject": "action 'profile_booking_add'",
+      "message": "durable write is gated by transient variable 'booking_dialog'; confirm the gate is presentation-only"
+    },
+    {
+      "check": "F10",
+      "subject": "action 'shared_add_places'",
+      "message": "durable write is gated by transient variable 'add_dialog'; confirm the gate is presentation-only"
+    },
+    {
+      "check": "F5",
+      "subject": "goal 'G_collection_created'",
+      "message": "requires_actions names 'collections_open_create' which has no durable write"
+    },
+    {
+      "check": "F5",
+      "subject": "goal 'G_place_saved'",
+      "message": "requires_actions names 'browse_open_place' which has no durable write"
+    },
+    {
+      "check": "F5",
+      "subject": "goal 'G_place_saved'",
+      "message": "requires_actions names 'place_open_collection_selector' which has no durable write"
+    },
+    {
+      "check": "F5",
+      "subject": "goal 'G_booking_recorded'",
+      "message": "requires_actions names 'profile_booking_open' which has no durable write"
+    }
+  ],
+  "metrics": {
+    "spec": {
+      "spec_version": 1,
+      "entities": 8,
+      "fields": 32,
+      "relationships": 4,
+      "operations": 20,
+      "write_operations": 13,
+      "pages": 13,
+      "pages_by_scope": {
+        "Core": 10,
+        "Shell-only": 0,
+        "Supporting": 3
+      },
+      "actors": 2,
+      "assumptions_total": 4,
+      "assumptions_open": 3,
+      "declared_collections": 13,
+      "declared_empty_pages": 3,
+      "total_declared_min_rows": 56,
+      "lowest_floor": 1,
+      "evidence_distribution": {
+        "A": 72,
+        "B": 1,
+        "C": 0,
+        "missing": 0
+      }
+    },
+    "fsm": {
+      "fsm_version": 1,
+      "pages": 13,
+      "pages_by_scope": {
+        "Core": 10,
+        "Shell-only": 0,
+        "Supporting": 3
+      },
+      "signature_variables": 41,
+      "signature_durable": 9,
+      "signature_transient": 32,
+      "actions": 71,
+      "navigation_actions": 28,
+      "intra_page_actions": 43,
+      "write_actions": 14,
+      "goals": 7,
+      "mean_out_degree": 5.46,
+      "max_out_degree": 19,
+      "unique_selectors": 82,
+      "exempt_pages": 0,
+      "exempt_core_pages": 0,
+      "exempt_core_share": 0.0,
+      "evidence_distribution": {
+        "A": 125,
+        "B": 0,
+        "C": 0,
+        "missing": 0
+      },
+      "core_nodes_above_level_a": 0
+    },
+    "traversal": {
+      "reachable_states_bounded": 694,
+      "bound_hit": true,
+      "max_states": 20000,
+      "max_depth": 12,
+      "actions_covered": 71,
+      "actions_unreachable": 0,
+      "canonical_action_traversals": 71,
+      "canonical_action_steps": 294,
+      "goals_reachable": 7,
+      "goals_unreachable": 0,
+      "goals_uncheckable": 0,
+      "goal_traversal_lengths": {
+        "G_account_created": 2,
+        "G_collection_created": 5,
+        "G_place_saved": 5,
+        "G_collection_shared": 5,
+        "G_vote_cast": 7,
+        "G_booking_recorded": 5,
+        "G_shared_saved": 7
+      }
+    },
+    "inventory": {
+      "static": 15,
+      "behavioural": 52,
+      "excluded": 4,
+      "exempt": 10,
+      "unassigned": 0
+    }
+  },
+  "canonical_traversals": {
+    "action_coverage": {
+      "landing_sign_in": [
+        "landing_sign_in"
+      ],
+      "landing_open_loki": [
+        "landing_open_loki"
+      ],
+      "landing_scroll_how": [
+        "landing_scroll_how"
+      ],
+      "landing_footer_explore": [
+        "landing_footer_explore"
+      ],
+      "landing_footer_about": [
+        "landing_footer_about"
+      ],
+      "landing_footer_privacy": [
+        "landing_footer_privacy"
+      ],
+      "landing_footer_cookies": [
+        "landing_footer_cookies"
+      ],
+      "auth_sign_in": [
+        "landing_sign_in",
+        "auth_sign_in"
+      ],
+      "auth_sign_up": [
+        "landing_sign_in",
+        "auth_sign_up"
+      ],
+      "about_open_app": [
+        "landing_footer_about",
+        "about_open_app"
+      ],
+      "browse_toggle_search": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_toggle_search"
+      ],
+      "browse_open_chat": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_open_chat"
+      ],
+      "browse_explore_group": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_explore_group"
+      ],
+      "browse_open_vibe": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_open_vibe"
+      ],
+      "browse_open_place": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_open_place"
+      ],
+      "browse_quick_map": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_map"
+      ],
+      "browse_quick_collections": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_collections"
+      ],
+      "browse_quick_quiz": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_quiz"
+      ],
+      "browse_see_all_vibes": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_see_all_vibes"
+      ],
+      "browse_nav_maps": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_nav_maps"
+      ],
+      "browse_nav_collections": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_nav_collections"
+      ],
+      "browse_nav_profile": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_nav_profile"
+      ],
+      "onboarding_advance": [
+        "landing_sign_in",
+        "auth_sign_up",
+        "onboarding_advance"
+      ],
+      "onboarding_skip": [
+        "landing_sign_in",
+        "auth_sign_up",
+        "onboarding_skip"
+      ],
+      "browse_search": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_toggle_search",
+        "browse_search"
+      ],
+      "chat_send": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_open_chat",
+        "chat_send"
+      ],
+      "browse_clear_vibe": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_open_vibe",
+        "browse_clear_vibe"
+      ],
+      "browse_vibe_grid_open_place": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_open_vibe",
+        "browse_vibe_grid_open_place"
+      ],
+      "place_close_sheet": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_open_place",
+        "place_close_sheet"
+      ],
+      "place_open_collection_selector": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_open_place",
+        "place_open_collection_selector"
+      ],
+      "maps_dismiss_interstitial": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_map",
+        "maps_dismiss_interstitial"
+      ],
+      "maps_nav_browse": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_map",
+        "maps_nav_browse"
+      ],
+      "collections_open_create": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_collections",
+        "collections_open_create"
+      ],
+      "collections_open_detail": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_collections",
+        "collections_open_detail"
+      ],
+      "collections_nav_browse": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_collections",
+        "collections_nav_browse"
+      ],
+      "vibes_select": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_see_all_vibes",
+        "vibes_select"
+      ],
+      "vibes_back": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_see_all_vibes",
+        "vibes_back"
+      ],
+      "profile_sign_out": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_nav_profile",
+        "profile_sign_out"
+      ],
+      "profile_booking_open": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_nav_profile",
+        "profile_booking_open"
+      ],
+      "profile_booking_remove": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_nav_profile",
+        "profile_booking_remove"
+      ],
+      "onboarding_finish": [
+        "landing_sign_in",
+        "auth_sign_up",
+        "onboarding_advance",
+        "onboarding_finish"
+      ],
+      "place_toggle_collection": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_open_place",
+        "place_open_collection_selector",
+        "place_toggle_collection"
+      ],
+      "maps_expand_sheet": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_map",
+        "maps_dismiss_interstitial",
+        "maps_expand_sheet"
+      ],
+      "maps_open_filters": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_map",
+        "maps_dismiss_interstitial",
+        "maps_open_filters"
+      ],
+      "maps_area_search": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_map",
+        "maps_dismiss_interstitial",
+        "maps_area_search"
+      ],
+      "maps_select_place": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_map",
+        "maps_dismiss_interstitial",
+        "maps_select_place"
+      ],
+      "maps_hotspot": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_map",
+        "maps_dismiss_interstitial",
+        "maps_hotspot"
+      ],
+      "collections_create": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_collections",
+        "collections_open_create",
+        "collections_create"
+      ],
+      "detail_back": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_collections",
+        "collections_open_detail",
+        "detail_back"
+      ],
+      "collection_share": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_collections",
+        "collections_open_detail",
+        "collection_share"
+      ],
+      "collection_delete_open": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_collections",
+        "collections_open_detail",
+        "collection_delete_open"
+      ],
+      "collection_collaborators": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_collections",
+        "collections_open_detail",
+        "collection_collaborators"
+      ],
+      "detail_remove_place": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_collections",
+        "collections_open_detail",
+        "detail_remove_place"
+      ],
+      "collection_vote": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_collections",
+        "collections_open_detail",
+        "collection_vote"
+      ],
+      "collection_decide_results": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_collections",
+        "collections_open_detail",
+        "collection_decide_results"
+      ],
+      "detail_open_map": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_collections",
+        "collections_open_detail",
+        "detail_open_map"
+      ],
+      "vibes_apply": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_see_all_vibes",
+        "vibes_select",
+        "vibes_apply"
+      ],
+      "profile_booking_add": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_nav_profile",
+        "profile_booking_open",
+        "profile_booking_add"
+      ],
+      "maps_toggle_popups": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_map",
+        "maps_dismiss_interstitial",
+        "maps_open_filters",
+        "maps_toggle_popups"
+      ],
+      "detail_open_share_link": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_collections",
+        "collections_open_detail",
+        "collection_share",
+        "detail_open_share_link"
+      ],
+      "collection_delete": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_collections",
+        "collections_open_detail",
+        "collection_delete_open",
+        "collection_delete"
+      ],
+      "collab_add": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_collections",
+        "collections_open_detail",
+        "collection_collaborators",
+        "collab_add"
+      ],
+      "collab_remove": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_collections",
+        "collections_open_detail",
+        "collection_collaborators",
+        "collab_remove"
+      ],
+      "detail_close_map": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_collections",
+        "collections_open_detail",
+        "detail_open_map",
+        "detail_close_map"
+      ],
+      "shared_guest_identity": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_collections",
+        "collections_open_detail",
+        "collection_share",
+        "detail_open_share_link",
+        "shared_guest_identity"
+      ],
+      "shared_expand_place": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_collections",
+        "collections_open_detail",
+        "collection_share",
+        "detail_open_share_link",
+        "shared_expand_place"
+      ],
+      "shared_vote": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_collections",
+        "collections_open_detail",
+        "collection_share",
+        "detail_open_share_link",
+        "shared_vote"
+      ],
+      "shared_add_places_open": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_collections",
+        "collections_open_detail",
+        "collection_share",
+        "detail_open_share_link",
+        "shared_add_places_open"
+      ],
+      "shared_save": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_collections",
+        "collections_open_detail",
+        "collection_share",
+        "detail_open_share_link",
+        "shared_save"
+      ],
+      "shared_go_home": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_collections",
+        "collections_open_detail",
+        "collection_share",
+        "detail_open_share_link",
+        "shared_go_home"
+      ],
+      "shared_add_places": [
+        "landing_sign_in",
+        "auth_sign_in",
+        "browse_quick_collections",
+        "collections_open_detail",
+        "collection_share",
+        "detail_open_share_link",
+        "shared_add_places_open",
+        "shared_add_places"
+      ]
+    },
+    "goals": {
+      "G_account_created": {
+        "reachable": true,
+        "length": 2,
+        "path": [
+          "landing_sign_in",
+          "auth_sign_up"
+        ]
+      },
+      "G_collection_created": {
+        "reachable": true,
+        "length": 5,
+        "path": [
+          "landing_sign_in",
+          "auth_sign_in",
+          "browse_quick_collections",
+          "collections_open_create",
+          "collections_create"
+        ]
+      },
+      "G_place_saved": {
+        "reachable": true,
+        "length": 5,
+        "path": [
+          "landing_sign_in",
+          "auth_sign_in",
+          "browse_open_place",
+          "place_open_collection_selector",
+          "place_toggle_collection"
+        ]
+      },
+      "G_collection_shared": {
+        "reachable": true,
+        "length": 5,
+        "path": [
+          "landing_sign_in",
+          "auth_sign_in",
+          "browse_quick_collections",
+          "collections_open_detail",
+          "collection_share"
+        ]
+      },
+      "G_vote_cast": {
+        "reachable": true,
+        "length": 7,
+        "path": [
+          "landing_sign_in",
+          "auth_sign_in",
+          "browse_quick_collections",
+          "collections_open_detail",
+          "collection_share",
+          "detail_open_share_link",
+          "shared_vote"
+        ]
+      },
+      "G_booking_recorded": {
+        "reachable": true,
+        "length": 5,
+        "path": [
+          "landing_sign_in",
+          "auth_sign_in",
+          "browse_nav_profile",
+          "profile_booking_open",
+          "profile_booking_add"
+        ]
+      },
+      "G_shared_saved": {
+        "reachable": true,
+        "length": 7,
+        "path": [
+          "landing_sign_in",
+          "auth_sign_in",
+          "browse_quick_collections",
+          "collections_open_detail",
+          "collection_share",
+          "detail_open_share_link",
+          "shared_save"
+        ]
+      }
+    }
+  }
+}

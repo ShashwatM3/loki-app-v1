@@ -29,6 +29,12 @@ export default function TrialScreen() {
     if (result.canceled || !result.assets?.[0]) return;
     const asset = result.assets[0];
 
+    // web parity: reject non-image files (trial/page.tsx checks file.type)
+    if (asset.mimeType && !asset.mimeType.startsWith('image/')) {
+      setError('Please select an image file');
+      return;
+    }
+
     const maxSize = 5 * 1024 * 1024;
     if (asset.fileSize && asset.fileSize > maxSize) {
       setError('File size must be less than 5MB');

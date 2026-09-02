@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Check, Loader2, Pencil, Plus, Trophy, Users, X } from 'lucide-react-native';
+import { CalendarDays, Check, Loader2, Pencil, Plus, Trophy, Users, X } from 'lucide-react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Button } from '../../components/ui/Button';
@@ -22,6 +22,14 @@ import { CollectionMap } from '../../components/maps/CollectionMap';
 import { CollectionSwipeDeck } from '../../components/collections/CollectionSwipeDeck';
 import FullPageLoader from '../../components/FullPageLoader';
 import { placeKey, type CollectionVotes } from '../../lib/collectionVoting';
+import { AvailabilityCalendar } from '../../components/collections/AvailabilityCalendar';
+import {
+  availabilityWindow,
+  bestDays,
+  formatDayLabel,
+  tallyAvailability,
+  type CollectionAvailability,
+} from '../../lib/collectionAvailability';
 import { placeMetaLine } from '../../lib/placeBlurb';
 import { getGradientFromString, parseCssGradient } from '../../lib/utils';
 import { getDocument } from '../../lib/firebaseActions';
@@ -115,6 +123,7 @@ type ShareData = {
   places: Place[];
   sharedCollectionId?: string;
   initialVotes: CollectionVotes;
+  initialAvailability: CollectionAvailability;
   ownerEmail?: string;
   members: SharedCollectionMember[];
   linkCollaborators: LinkCollaborator[];
@@ -162,6 +171,7 @@ export default function SharedCollectionScreen() {
             places: sharedCollection.places || [],
             sharedCollectionId: sharedCollection.id,
             initialVotes: sharedCollection.votes || {},
+            initialAvailability: sharedCollection.availability || {},
             ownerEmail: sharedCollection.ownerEmail,
             members: sharedCollection.members || [],
             linkCollaborators: sharedCollection.linkCollaborators || [],
@@ -180,6 +190,7 @@ export default function SharedCollectionScreen() {
                 places: legacyCollection.places || [],
                 sharedCollectionId: undefined,
                 initialVotes: legacyCollection.votes || {},
+                initialAvailability: legacyCollection.availability || {},
                 ownerEmail: email,
                 members: [],
                 linkCollaborators: legacyCollection.linkCollaborators || [],
@@ -235,6 +246,7 @@ function SharedCollectionClient({
   places,
   sharedCollectionId,
   initialVotes = {},
+  initialAvailability = {},
   ownerEmail,
   members = [],
   linkCollaborators = [],
@@ -271,6 +283,8 @@ function SharedCollectionClient({
 
   // Collaborative swipe votes.
   const [votes, setVotes] = useState<CollectionVotes>(initialVotes);
+  const [lastSwiped, setLastSwiped] = useState<Place | null>(null);
+  const [availability, setAvailability] = useState<CollectionAvailability>(initialAvailability);
   const [guests, setGuests] = useState<LinkCollaborator[]>(linkCollaborators);
 
   const canEditFromLink = access === 'edit';
@@ -475,13 +489,15 @@ function SharedCollectionClient({
     return deckPlaces.filter((p) => !mine[placeKey(p)]);
   }, [deckPlaces, votes, voterId]);
 
-  const recordVote = useCallback(
-    (place: Place, vote: 'yes' | 'no') => {
+  const sendVote = useCallback(
+    (place: Place, vote: 'yes' | 'no' | 'undo') => {
       const key = placeKey(place);
-      setVotes((prev) => ({
-        ...prev,
-        [voterId]: { ...(prev[voterId] || {}), [key]: vote },
-      }));
+      setVotes((prev) => {
+        const mine = { ...(prev[voterId] || {}) };
+        if (vote === 'undo') delete mine[key];
+        else mine[key] = vote;
+        return { ...prev, [voterId]: mine };
+      });
       fetch(`${WEB_BASE_URL}/api/shared-collection/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -503,6 +519,47 @@ function SharedCollectionClient({
         });
     },
     [token, voterId, currentUser.name, avatar]
+  );
+
+  const recordVote = useCallback(
+    (place: Place, vote: 'yes' | 'no') => {
+      setLastSwiped(place);
+      sendVote(place, vote);
+    },
+    [sendVote]
+  );
+
+  const undoLastSwipe = useCallback(() => {
+    if (!lastSwiped) return;
+    const place = lastSwiped;
+    setLastSwiped(null);
+    sendVote(place, 'undo');
+  }, [lastSwiped, sendVote]);
+
+  const toggleAvailabilityDay = useCallback(
+    (_dayKey: string, dates: string[]) => {
+      const entry = {
+        name: currentUser.name,
+        avatar: avatar ? (AVATARS.find((a) => a.id === avatar)?.emoji ?? '') : '',
+        photo: userData.photo || '',
+        dates,
+      };
+      setAvailability((prev) => ({ ...prev, [voterId]: entry }));
+      fetch(`${WEB_BASE_URL}/api/shared-collection/availability`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, participantId: voterId, ...entry }),
+      }).catch(() => {
+        /* best-effort; local state already updated */
+      });
+    },
+    [token, voterId, currentUser.name, avatar, userData.photo]
+  );
+
+  // "When?" — the days the most people marked themselves free.
+  const topDays = useMemo(
+    () => bestDays(tallyAvailability(availability, availabilityWindow())),
+    [availability]
   );
 
   // Leaderboard: every place ranked by how many people swiped "yes".
@@ -638,18 +695,7 @@ function SharedCollectionClient({
               style={styles.map}
             />
 
-            {/* 2. Aesthetic vertical list */}
-            <View>
-              <Text style={styles.sectionLabel}>The lineup</Text>
-              <ExpandableCardDemo
-                places={livePlaces}
-                canRemove={canEditFromLink}
-                removingPlaceId={mutatingPlaceId}
-                onRemove={(place) => mutate('remove', String(place.id))}
-              />
-            </View>
-
-            {/* 3. Swipe feature */}
+            {/* 2. Swipe feature */}
             <View onLayout={(e) => (swipeSectionY.current = e.nativeEvent.layout.y)}>
               <Text style={styles.swipeTitle}>Start swiping to pick a spot</Text>
               <Text style={styles.swipeSubtitle}>
@@ -661,6 +707,8 @@ function SharedCollectionClient({
                   totalCount={deckPlaces.length}
                   votedCount={deckPlaces.length - remainingToSwipe.length}
                   onVote={recordVote}
+                  onUndo={undoLastSwipe}
+                  canUndo={Boolean(lastSwiped)}
                 />
               ) : (
                 <View style={styles.swipedAllBox}>
@@ -668,13 +716,44 @@ function SharedCollectionClient({
                   <Text style={styles.swipedAllSubtitle}>
                     Check the leaderboard to see what the group loves most.
                   </Text>
+                  {lastSwiped ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      style={styles.undoAllBtn}
+                      onPress={undoLastSwipe}
+                    >
+                      Undo last swipe
+                    </Button>
+                  ) : null}
                 </View>
               )}
             </View>
 
-            {/* 4. Leaderboard */}
+            {/* 3. Aesthetic vertical list */}
+            <View>
+              <Text style={styles.sectionLabel}>The lineup</Text>
+              <ExpandableCardDemo
+                places={livePlaces}
+                canRemove={canEditFromLink}
+                removingPlaceId={mutatingPlaceId}
+                onRemove={(place) => mutate('remove', String(place.id))}
+              />
+            </View>
+
+            {/* 4. Who's free when — rolling two-week window */}
+            <View>
+              <AvailabilityCalendar
+                availability={availability}
+                myId={voterId}
+                onToggleDay={toggleAvailabilityDay}
+              />
+            </View>
+
+            {/* 5. The plan: where (leaderboard) + when (most-voted days). */}
             {leaderboard.length > 0 && (!allEqual || remainingToSwipe.length === 0) ? (
               <View>
+                <Text style={styles.swipeTitle}>Where?</Text>
                 <View style={styles.leaderboardHeader}>
                   <Trophy size={16} color={tw.amber500} />
                   <Text style={styles.sectionLabelInline}>
@@ -729,6 +808,33 @@ function SharedCollectionClient({
                     );
                   })}
                 </View>
+
+                <Text style={[styles.swipeTitle, { marginTop: 32 }]}>When?</Text>
+                <View style={styles.leaderboardHeader}>
+                  <CalendarDays size={16} color={tw.emerald500} />
+                  <Text style={styles.sectionLabelInline}>
+                    {topDays.length > 0 ? 'Most people are free' : 'No dates picked yet'}
+                  </Text>
+                </View>
+                {topDays.length > 0 ? (
+                  <View style={{ gap: 8 }}>
+                    {topDays.map((day) => (
+                      <View key={day.key} style={styles.whenRow}>
+                        <CalendarDays size={16} color={tw.emerald500} />
+                        <Text style={styles.whenRowLabel}>{formatDayLabel(day.date)}</Text>
+                        <View style={styles.leaderYes}>
+                          <Users size={16} color={tw.emerald500} />
+                          <Text style={styles.leaderYesCount}>{day.people.length}</Text>
+                          <Text style={styles.leaderYesLabel}>free</Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                ) : (
+                  <Text style={styles.whenEmpty}>
+                    Tap the days you&apos;re free above and the group&apos;s best date shows up here.
+                  </Text>
+                )}
               </View>
             ) : null}
           </View>
@@ -1169,6 +1275,45 @@ const styles = StyleSheet.create({
     color: colors.mutedForeground,
     fontFamily: fonts.sans,
     textAlign: 'center',
+  },
+  // web: mt-4 h-8 rounded-full outline button
+  undoAllBtn: {
+    marginTop: 16,
+    height: 32,
+    borderRadius: 9999,
+    alignSelf: 'center',
+  },
+  // web: flex items-center gap-3 rounded-2xl border-emerald-400/40 bg-emerald-500/[0.06] px-3 py-2.5
+  whenRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: radius['2xl'],
+    borderWidth: 1,
+    borderColor: 'rgba(0,212,146,0.4)',
+    backgroundColor: 'rgba(0,188,125,0.06)',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  // flex-1 text-sm font-semibold text-foreground
+  whenRowLabel: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: fonts.sansSemiBold,
+    color: colors.foreground,
+  },
+  // web: rounded-2xl border-border/70 bg-card/40 px-4 py-5 text-sm text-muted-foreground
+  whenEmpty: {
+    borderRadius: radius['2xl'],
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(9,10,12,0.4)',
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
   },
   leaderboardHeader: {
     marginBottom: 12,

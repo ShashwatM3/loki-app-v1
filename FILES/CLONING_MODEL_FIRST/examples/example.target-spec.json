@@ -1,0 +1,407 @@
+{
+  "schema": "target-spec.json/v1",
+  "clone_id": "example",
+  "spec_version": 1,
+  "created_at": "2026-08-31T00:00:00Z",
+  "target": {
+    "canonical_product_name": "Example Trips",
+    "target_url": "https://example.invalid",
+    "locale_observed": "en-US",
+    "observed_between": [
+      "2026-08-30T09:00:00Z",
+      "2026-08-30T15:00:00Z"
+    ]
+  },
+  "entities": [
+    {
+      "name": "Reservation",
+      "table": "reservations",
+      "description": "One booked stay belonging to one listing.",
+      "lifecycle_states": [
+        "pending",
+        "confirmed",
+        "cancelled",
+        "completed"
+      ],
+      "seed_density": {
+        "amount": "many",
+        "capability": "a trips list dense enough to page, plus one cancellable and several completed stays",
+        "observed_target_count": 31
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "primary_key": true,
+          "required": true,
+          "evidence": {
+            "level": "A",
+            "ref": "evidence/api/reservations-index.json",
+            "observed_at": "2026-08-30T09:12:00Z"
+          }
+        },
+        {
+          "name": "listing_id",
+          "type": "string",
+          "required": true,
+          "evidence": {
+            "level": "A",
+            "ref": "evidence/api/reservations-index.json",
+            "observed_at": "2026-08-30T09:12:00Z"
+          }
+        },
+        {
+          "name": "status",
+          "type": "enum",
+          "required": true,
+          "enum_domain": [
+            "pending",
+            "confirmed",
+            "cancelled",
+            "completed"
+          ],
+          "enum_complete": true,
+          "evidence": {
+            "level": "A",
+            "ref": "evidence/api/reservations-index.json",
+            "observed_at": "2026-08-30T09:12:00Z"
+          }
+        },
+        {
+          "name": "cancelled_at",
+          "type": "datetime",
+          "evidence": {
+            "level": "A",
+            "ref": "evidence/api/reservation-show-cancelled.json",
+            "observed_at": "2026-08-30T14:40:00Z"
+          }
+        }
+      ],
+      "invariants": [
+        "A cancelled reservation cannot return to confirmed through the product UI."
+      ],
+      "evidence": {
+        "level": "A",
+        "ref": "evidence/api/reservations-index.json",
+        "observed_at": "2026-08-30T09:12:00Z"
+      }
+    },
+    {
+      "name": "Listing",
+      "table": "listings",
+      "seed_density": {
+        "amount": "many",
+        "capability": "list density, ordering, and relational joins from the trips list",
+        "observed_target_count": 40
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "primary_key": true,
+          "required": true,
+          "evidence": {
+            "level": "A",
+            "ref": "evidence/api/listing-show.json",
+            "observed_at": "2026-08-30T09:20:00Z"
+          }
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "required": true,
+          "evidence": {
+            "level": "A",
+            "ref": "evidence/api/listing-show.json",
+            "observed_at": "2026-08-30T09:20:00Z"
+          }
+        }
+      ],
+      "evidence": {
+        "level": "A",
+        "ref": "evidence/api/listing-show.json",
+        "observed_at": "2026-08-30T09:20:00Z"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "from": "Reservation",
+      "to": "Listing",
+      "type": "belongs_to",
+      "field": "listing_id",
+      "evidence": {
+        "level": "A",
+        "ref": "evidence/api/reservations-index.json"
+      }
+    }
+  ],
+  "operations": [
+    {
+      "id": "reservation.list",
+      "name": "List the actor's reservations",
+      "kind": "read",
+      "parameters": [
+        {
+          "name": "status",
+          "type": "string",
+          "source": "user",
+          "required": false
+        },
+        {
+          "name": "page",
+          "type": "integer",
+          "source": "user",
+          "required": false
+        },
+        {
+          "name": "actorId",
+          "type": "string",
+          "source": "system"
+        }
+      ],
+      "reads": [
+        "Reservation",
+        "Listing"
+      ],
+      "writes": [],
+      "evidence": {
+        "level": "A",
+        "ref": "evidence/api/reservations-index.json",
+        "observed_at": "2026-08-30T09:12:00Z"
+      }
+    },
+    {
+      "id": "reservation.show",
+      "name": "Show one reservation",
+      "kind": "read",
+      "parameters": [
+        {
+          "name": "reservationId",
+          "type": "string",
+          "source": "user"
+        },
+        {
+          "name": "actorId",
+          "type": "string",
+          "source": "system"
+        }
+      ],
+      "reads": [
+        "Reservation",
+        "Listing"
+      ],
+      "writes": [],
+      "evidence": {
+        "level": "A",
+        "ref": "evidence/api/reservation-show.json",
+        "observed_at": "2026-08-30T09:30:00Z"
+      }
+    },
+    {
+      "id": "reservation.cancel",
+      "name": "Cancel a confirmed reservation",
+      "kind": "write",
+      "parameters": [
+        {
+          "name": "reservationId",
+          "type": "string",
+          "source": "user"
+        },
+        {
+          "name": "actorId",
+          "type": "string",
+          "source": "system"
+        },
+        {
+          "name": "now",
+          "type": "datetime",
+          "source": "system"
+        }
+      ],
+      "reads": [
+        "Reservation"
+      ],
+      "writes": [
+        "Reservation"
+      ],
+      "invariants": [
+        "Only a confirmed reservation may be cancelled."
+      ],
+      "idempotency": {
+        "mode": "keyed",
+        "key": "reservation_id"
+      },
+      "ledger_action": "reservation.cancel",
+      "evidence": {
+        "level": "A",
+        "ref": "evidence/api/reservation-cancel.json",
+        "observed_at": "2026-08-30T14:38:00Z"
+      }
+    }
+  ],
+  "pages": [
+    {
+      "id": "trips",
+      "route": "/trips",
+      "name": "Trips",
+      "scope_class": "Core",
+      "actor_roles": [
+        "guest"
+      ],
+      "operations": [
+        "reservation.list"
+      ],
+      "incoming_params": [],
+      "outgoing": [
+        {
+          "target": "trip_detail",
+          "params": {
+            "id": "reservationId"
+          }
+        },
+        {
+          "target": "help"
+        }
+      ],
+      "access": [
+        {
+          "type": "navigation",
+          "from": "header"
+        }
+      ],
+      "evidence": {
+        "level": "A",
+        "ref": "evidence/target/trips-1440.png",
+        "observed_at": "2026-08-30T09:05:00Z"
+      },
+      "density": [
+        {
+          "collection": "Trips list",
+          "entity": "Reservation",
+          "surface_kind": "page_list",
+          "observed_target_first_paint": 14,
+          "paginates": true,
+          "page_size": 5,
+          "min_rows": 12
+        }
+      ]
+    },
+    {
+      "id": "trip_detail",
+      "route": "/trips/:id",
+      "name": "Trip detail",
+      "scope_class": "Core",
+      "actor_roles": [
+        "guest"
+      ],
+      "operations": [
+        "reservation.show",
+        "reservation.cancel"
+      ],
+      "incoming_params": [
+        "id"
+      ],
+      "outgoing": [
+        {
+          "target": "trips"
+        }
+      ],
+      "access": [
+        {
+          "type": "navigation",
+          "from": "trips"
+        }
+      ],
+      "evidence": {
+        "level": "A",
+        "ref": "evidence/target/trip-detail-1440.png",
+        "observed_at": "2026-08-30T09:32:00Z"
+      },
+      "density": [
+        {
+          "collection": "Stay timeline",
+          "entity": "Reservation",
+          "surface_kind": "detail_child",
+          "observed_target_first_paint": 4,
+          "paginates": false,
+          "min_rows": 3
+        }
+      ]
+    },
+    {
+      "id": "help",
+      "route": "/help",
+      "name": "Help centre",
+      "scope_class": "Shell-only",
+      "operations": [],
+      "outgoing": [
+        {
+          "target": "trips"
+        },
+        {
+          "target": "BOUNDARY",
+          "boundary_treatment": "target_like_unavailable_state",
+          "boundary_reason": "Deep help article tree is Excluded scope; the clone renders the target's own unavailable state."
+        }
+      ],
+      "evidence": {
+        "level": "B",
+        "ref": "evidence/target/help-capture.png",
+        "observed_at": "2026-08-30T10:02:00Z"
+      },
+      "declared_empty": {
+        "reason": "The help landing page renders static article links rather than a data collection; the deep article tree is Excluded scope."
+      }
+    }
+  ],
+  "chrome": {
+    "header_links": [
+      {
+        "text": "Trips",
+        "target": "trips"
+      },
+      {
+        "text": "Help",
+        "target": "help"
+      }
+    ],
+    "footer_links": [
+      {
+        "text": "Terms",
+        "target": "BOUNDARY",
+        "boundary_treatment": "consistently_removed",
+        "boundary_reason": "Legal tree is Excluded scope and the link is removed from the footer consistently."
+      }
+    ]
+  },
+  "actors": [
+    {
+      "id": "guest_demo",
+      "role": "guest",
+      "seeded": true,
+      "differences": "Sees only own reservations.",
+      "evidence": {
+        "level": "A",
+        "ref": "evidence/target/account-menu.png"
+      }
+    }
+  ],
+  "clock": {
+    "frozen_now": "2026-09-01T10:00:00-07:00",
+    "timezone": "America/Los_Angeles",
+    "currency": "USD",
+    "locale": "en-US",
+    "reason": "One confirmed upcoming stay and one completed past stay are both non-empty at this instant, which is what makes the trips list and the cancel path reachable."
+  },
+  "assumptions": [
+    {
+      "id": "AS-001",
+      "subject": "Reservation.cancelled_at precision",
+      "statement": "The target stores a UTC timestamp rather than a date.",
+      "why_unobservable": "The UI renders a date only; the cancelled payload was observed once and showed a full timestamp.",
+      "risk_if_wrong": "Ordering of same-day cancellations could differ from the target.",
+      "status": "open"
+    }
+  ]
+}

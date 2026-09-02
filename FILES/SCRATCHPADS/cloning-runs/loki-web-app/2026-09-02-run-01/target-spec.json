@@ -1,0 +1,443 @@
+{
+  "schema": "target-spec.json/v1",
+  "clone_id": "loki-app",
+  "spec_version": 1,
+  "created_at": "2026-09-02T09:45:00+04:00",
+  "target": {
+    "canonical_product_name": "Loki (lokidxb.com)",
+    "target_url": "http://localhost:3900 (loki-web-app local dev; production https://lokidxb.com)",
+    "locale_observed": "en",
+    "observed_between": ["2026-09-02T09:00:00+04:00", "2026-09-02T15:00:00+04:00"]
+  },
+  "entities": [
+    {
+      "name": "User",
+      "table": "users",
+      "description": "Firestore users/{email} document; keyed by email; shared between web and app.",
+      "seed_density": { "amount": "many", "capability": "live production user pool shared with the target; demo account demo@lokidxb.com used for verification" },
+      "fields": [
+        { "name": "email", "type": "string", "primary_key": true, "required": true, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        { "name": "name", "type": "string", "required": true, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        { "name": "photo", "type": "string", "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } }
+      ],
+      "invariants": ["User documents are keyed by email; the same document backs web and app sessions."],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    {
+      "name": "Collection",
+      "table": "users.collections",
+      "description": "Array of collection objects embedded in the users/{email} document.",
+      "seed_density": { "amount": "few", "capability": "collection list, detail view, share and vote flows on the demo account" },
+      "fields": [
+        { "name": "id", "type": "string", "primary_key": true, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        { "name": "name", "type": "string", "required": true, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        { "name": "type", "type": "enum", "enum_domain": ["personal", "shared"], "enum_complete": true, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        { "name": "places", "type": "json", "required": true, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        { "name": "gradient", "type": "string", "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        { "name": "collaborators", "type": "json", "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        { "name": "ownerEmail", "type": "string", "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        { "name": "access", "type": "enum", "enum_domain": ["edit", "view"], "enum_complete": false, "evidence": { "level": "B", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } }
+      ],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    {
+      "name": "Booking",
+      "table": "users.bookings",
+      "description": "Array of EventBooking objects embedded in users/{email}; powers the profile Calendar pane.",
+      "seed_density": { "amount": "few", "capability": "profile Calendar list with at least one row plus the empty state" },
+      "fields": [
+        { "name": "id", "type": "string", "primary_key": true, "evidence": { "level": "A", "ref": "loki-web-app/components/profile/booking-reminders.tsx:106", "observed_at": "2026-09-02T09:40:00+04:00" } },
+        { "name": "placeName", "type": "string", "required": true, "evidence": { "level": "A", "ref": "loki-web-app/components/profile/booking-reminders.tsx:107", "observed_at": "2026-09-02T09:40:00+04:00" } },
+        { "name": "startsAt", "type": "datetime", "required": true, "evidence": { "level": "A", "ref": "loki-web-app/components/profile/booking-reminders.tsx:104", "observed_at": "2026-09-02T09:40:00+04:00" } },
+        { "name": "reminderMinutesBefore", "type": "integer", "evidence": { "level": "A", "ref": "loki-web-app/components/profile/booking-reminders.tsx:110", "observed_at": "2026-09-02T09:40:00+04:00" } },
+        { "name": "location", "type": "string", "evidence": { "level": "A", "ref": "loki-web-app/components/profile/booking-reminders.tsx:108", "observed_at": "2026-09-02T09:40:00+04:00" } },
+        { "name": "createdAt", "type": "datetime", "evidence": { "level": "A", "ref": "loki-web-app/components/profile/booking-reminders.tsx:111", "observed_at": "2026-09-02T09:40:00+04:00" } }
+      ],
+      "evidence": { "level": "A", "ref": "loki-web-app/components/profile/booking-reminders.tsx", "observed_at": "2026-09-02T09:40:00+04:00" }
+    },
+    {
+      "name": "Place",
+      "table": "places",
+      "description": "Firestore places collection: venues with images, category, tags, vibes, limited-time popup flags.",
+      "seed_density": { "amount": "many", "capability": "browse grid, vibe albums, explore results, map markers — live production data shared with the target", "observed_target_count": 200 },
+      "fields": [
+        { "name": "id", "type": "string", "primary_key": true, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        { "name": "name", "type": "string", "required": true, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        { "name": "category", "type": "string", "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        { "name": "images", "type": "json", "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        { "name": "location", "type": "string", "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } }
+      ],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    {
+      "name": "SharedCollection",
+      "table": "sharedCollections",
+      "description": "Firestore sharedCollections/{id}: shared copy of a collection with members, votes, live locations.",
+      "seed_density": { "amount": "few", "capability": "shared link open, guest voting, crew and leaderboard panes" },
+      "fields": [
+        { "name": "id", "type": "string", "primary_key": true, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        { "name": "name", "type": "string", "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        { "name": "places", "type": "json", "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        { "name": "ownerEmail", "type": "string", "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } }
+      ],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    {
+      "name": "Vote",
+      "table": "sharedCollections.votes",
+      "description": "Vote entries embedded in sharedCollections documents (and mirrored to the owner's copy) via lib/collectionPersistence.",
+      "seed_density": { "amount": "few", "capability": "leaderboard and winner panes need at least one yes vote" },
+      "fields": [
+        { "name": "voter", "type": "string", "primary_key": true, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        { "name": "placeId", "type": "string", "required": true, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        { "name": "vote", "type": "enum", "enum_domain": ["yes", "no"], "enum_complete": true, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } }
+      ],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    {
+      "name": "Category",
+      "table": "config.categories",
+      "description": "config/categories document: the admin-managed category vocabulary.",
+      "seed_density": { "amount": "many", "capability": "explore taxonomy and place tags; live shared data", "observed_target_count": 16 },
+      "fields": [
+        { "name": "name", "type": "string", "primary_key": true, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } }
+      ],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    {
+      "name": "ExploreSubfilter",
+      "table": "config.exploreSubfilters",
+      "description": "config/exploreSubfilters document: admin-added explore sub-filters merged into the built-in taxonomy.",
+      "seed_density": { "amount": "few", "capability": "explore drill-down pills; live shared data" },
+      "fields": [
+        { "name": "id", "type": "string", "primary_key": true, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        { "name": "label", "type": "string", "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } }
+      ],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    }
+  ],
+  "relationships": [
+    { "from": "Collection", "to": "User", "type": "belongs_to", "field": "ownerEmail", "evidence": { "level": "A", "ref": "evidence/web-surface-map.md" } },
+    { "from": "Booking", "to": "User", "type": "belongs_to", "field": "id", "evidence": { "level": "A", "ref": "loki-web-app/components/profile/booking-reminders.tsx:95" } },
+    { "from": "SharedCollection", "to": "User", "type": "belongs_to", "field": "ownerEmail", "evidence": { "level": "A", "ref": "evidence/web-surface-map.md" } },
+    { "from": "Vote", "to": "SharedCollection", "type": "belongs_to", "field": "placeId", "evidence": { "level": "A", "ref": "evidence/web-surface-map.md" } }
+  ],
+  "operations": [
+    { "id": "place.list", "name": "List places for browse/maps/vibes", "kind": "read",
+      "parameters": [
+        { "name": "vibe", "type": "string", "source": "user", "required": false },
+        { "name": "search", "type": "string", "source": "user", "required": false }
+      ],
+      "reads": ["Place", "Category"], "writes": [],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+    { "id": "category.list", "name": "Read the category vocabulary", "kind": "read",
+      "parameters": [], "reads": ["Category"], "writes": [],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+    { "id": "subfilter.list", "name": "Read admin explore sub-filters", "kind": "read",
+      "parameters": [], "reads": ["ExploreSubfilter"], "writes": [],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+    { "id": "user.show", "name": "Refresh the signed-in user's document", "kind": "read",
+      "parameters": [ { "name": "email", "type": "string", "source": "system" } ],
+      "reads": ["User", "Collection", "Booking"], "writes": [],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+    { "id": "shared_collection.show", "name": "Resolve a share token and load the shared collection", "kind": "read",
+      "parameters": [ { "name": "token", "type": "string", "source": "user" } ],
+      "reads": ["SharedCollection", "Vote", "Place"], "writes": [],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+    { "id": "recommendation.ask", "name": "Ask Loki (POST /api/gpt) for recommendations", "kind": "read",
+      "parameters": [ { "name": "message", "type": "string", "source": "user" }, { "name": "history", "type": "json", "source": "system" } ],
+      "reads": ["Place"], "writes": [],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+    { "id": "geocode.search", "name": "Area search (GET /api/geocode)", "kind": "read",
+      "parameters": [ { "name": "query", "type": "string", "source": "user" } ],
+      "reads": [], "writes": [],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+
+    { "id": "account.create", "name": "Create the user document after first sign-in (POST /api/create-account)", "kind": "write",
+      "parameters": [
+        { "name": "name", "type": "string", "source": "user" },
+        { "name": "email", "type": "string", "source": "system" }
+      ],
+      "reads": ["User"], "writes": ["User"],
+      "invariants": ["One users document per email."],
+      "idempotency": { "mode": "keyed", "key": "email" },
+      "ledger_action": "account.create",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+    { "id": "collection.create", "name": "Create a collection", "kind": "write",
+      "parameters": [ { "name": "name", "type": "string", "source": "user" }, { "name": "email", "type": "string", "source": "system" } ],
+      "reads": ["Collection"], "writes": ["Collection"],
+      "idempotency": { "mode": "natural" },
+      "ledger_action": "collection.create",
+      "evidence": { "level": "A", "ref": "loki-web-app/app/dashboard/layout.tsx:147-172", "observed_at": "2026-09-02T09:35:00+04:00" } },
+    { "id": "collection.delete", "name": "Delete a collection", "kind": "write",
+      "parameters": [ { "name": "collectionId", "type": "string", "source": "user" }, { "name": "email", "type": "string", "source": "system" } ],
+      "reads": ["Collection"], "writes": ["Collection"],
+      "idempotency": { "mode": "keyed", "key": "collection_id" },
+      "ledger_action": "collection.delete",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+    { "id": "collection.add_place", "name": "Add a place to a collection", "kind": "write",
+      "parameters": [ { "name": "collectionId", "type": "string", "source": "user" }, { "name": "placeId", "type": "string", "source": "user" }, { "name": "email", "type": "string", "source": "system" } ],
+      "reads": ["Collection", "Place"], "writes": ["Collection"],
+      "idempotency": { "mode": "keyed", "key": "collection_id + place_id" },
+      "ledger_action": "collection.add_place",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+    { "id": "collection.remove_place", "name": "Remove a place from a collection", "kind": "write",
+      "parameters": [ { "name": "collectionId", "type": "string", "source": "user" }, { "name": "placeId", "type": "string", "source": "user" }, { "name": "email", "type": "string", "source": "system" } ],
+      "reads": ["Collection"], "writes": ["Collection"],
+      "idempotency": { "mode": "keyed", "key": "collection_id + place_id" },
+      "ledger_action": "collection.remove_place",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+    { "id": "collection.share", "name": "Generate a share link (POST /api/encrypt) and create/refresh the sharedCollections doc", "kind": "write",
+      "parameters": [ { "name": "collectionId", "type": "string", "source": "user" }, { "name": "email", "type": "string", "source": "system" } ],
+      "reads": ["Collection"], "writes": ["SharedCollection"],
+      "idempotency": { "mode": "keyed", "key": "collection_id" },
+      "ledger_action": "collection.share",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+    { "id": "collaborator.add", "name": "Add a collaborator by email", "kind": "write",
+      "parameters": [ { "name": "collectionId", "type": "string", "source": "user" }, { "name": "collaboratorEmail", "type": "string", "source": "user" }, { "name": "email", "type": "string", "source": "system" } ],
+      "reads": ["Collection", "User"], "writes": ["Collection", "User"],
+      "idempotency": { "mode": "keyed", "key": "collection_id + collaborator_email" },
+      "ledger_action": "collaborator.add",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+    { "id": "collaborator.remove", "name": "Remove a collaborator", "kind": "write",
+      "parameters": [ { "name": "collectionId", "type": "string", "source": "user" }, { "name": "collaboratorEmail", "type": "string", "source": "user" }, { "name": "email", "type": "string", "source": "system" } ],
+      "reads": ["Collection", "User"], "writes": ["Collection", "User"],
+      "idempotency": { "mode": "keyed", "key": "collection_id + collaborator_email" },
+      "ledger_action": "collaborator.remove",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+    { "id": "shared_collection.vote", "name": "Cast or change a swipe vote (POST /api/shared-collection/vote or collectionPersistence)", "kind": "write",
+      "parameters": [ { "name": "collectionId", "type": "string", "source": "user" }, { "name": "placeId", "type": "string", "source": "user" }, { "name": "vote", "type": "string", "source": "user" }, { "name": "voter", "type": "string", "source": "system" } ],
+      "reads": ["SharedCollection"], "writes": ["Vote"],
+      "idempotency": { "mode": "keyed", "key": "collection_id + place_id + voter" },
+      "ledger_action": "shared_collection.vote",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+    { "id": "shared_collection.mutate", "name": "Editor adds/removes places on a shared collection (POST /api/shared-collection/mutate)", "kind": "write",
+      "parameters": [ { "name": "token", "type": "string", "source": "user" }, { "name": "placeIds", "type": "json", "source": "user" }, { "name": "actor", "type": "string", "source": "system" } ],
+      "reads": ["SharedCollection", "Place"], "writes": ["SharedCollection"],
+      "idempotency": { "mode": "keyed", "key": "shared_collection_id + place_id" },
+      "ledger_action": "shared_collection.mutate",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+    { "id": "shared_collection.save", "name": "Save a shared collection into the viewer's own collections (POST /api/shared-collection/save)", "kind": "write",
+      "parameters": [ { "name": "token", "type": "string", "source": "user" }, { "name": "email", "type": "string", "source": "system" } ],
+      "reads": ["SharedCollection"], "writes": ["Collection"],
+      "idempotency": { "mode": "keyed", "key": "user_email + shared_collection_id" },
+      "ledger_action": "shared_collection.save",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+    { "id": "booking.add", "name": "Record a booking reminder from the profile Calendar", "kind": "write",
+      "parameters": [
+        { "name": "placeName", "type": "string", "source": "user" },
+        { "name": "date", "type": "date", "source": "user" },
+        { "name": "time", "type": "string", "source": "user" },
+        { "name": "reminderMinutesBefore", "type": "integer", "source": "user" },
+        { "name": "email", "type": "string", "source": "system" }
+      ],
+      "reads": ["Booking", "Collection"], "writes": ["Booking"],
+      "idempotency": { "mode": "natural" },
+      "ledger_action": "booking.add",
+      "evidence": { "level": "A", "ref": "loki-web-app/components/profile/booking-reminders.tsx:99-127", "observed_at": "2026-09-02T09:40:00+04:00" } },
+    { "id": "booking.remove", "name": "Remove a booking reminder", "kind": "write",
+      "parameters": [ { "name": "bookingId", "type": "string", "source": "user" }, { "name": "email", "type": "string", "source": "system" } ],
+      "reads": ["Booking"], "writes": ["Booking"],
+      "idempotency": { "mode": "keyed", "key": "booking_id" },
+      "ledger_action": "booking.remove",
+      "evidence": { "level": "A", "ref": "loki-web-app/components/profile/booking-reminders.tsx:129-137", "observed_at": "2026-09-02T09:40:00+04:00" } }
+  ],
+  "pages": [
+    {
+      "id": "landing", "route": "/", "name": "Landing", "scope_class": "Core",
+      "actor_roles": ["visitor", "member"],
+      "operations": [],
+      "incoming_params": [],
+      "outgoing": [
+        { "target": "auth" }, { "target": "about" }, { "target": "privacy" }, { "target": "cookies" },
+        { "target": "BOUNDARY", "boundary_treatment": "target_like_unavailable_state", "boundary_reason": "Instagram/TikTok pills open external apps exactly as the target does (Linking.openURL)." }
+      ],
+      "access": [ { "type": "entry", "from": "app launch" } ],
+      "evidence": { "level": "A", "ref": "evidence/target-landing-top.png", "observed_at": "2026-09-02T09:18:00+04:00" },
+      "density": [
+        { "collection": "Hero carousel cards", "entity": "Place", "surface_kind": "pane", "observed_target_first_paint": 21, "paginates": false, "min_rows": 5 },
+        { "collection": "Swipe deck cards", "entity": "Place", "surface_kind": "pane", "observed_target_first_paint": 4, "paginates": false, "min_rows": 4 }
+      ],
+      "depth": { "observed_controls_mobile": 9, "parity_bar": "90% Core" }
+    },
+    {
+      "id": "auth", "route": "/Authentication", "name": "Authentication", "scope_class": "Core",
+      "actor_roles": ["visitor"],
+      "operations": ["account.create"],
+      "incoming_params": ["returnTo"],
+      "outgoing": [ { "target": "browse" }, { "target": "onboarding" } ],
+      "access": [ { "type": "navigation", "from": "landing" } ],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" },
+      "density": [],
+      "depth": { "observed_controls_mobile": 2, "parity_bar": "90% Core; platform substitution: email/password instead of Google popup (documented exception)" }
+    },
+    {
+      "id": "onboarding", "route": "/onboarding", "name": "Onboarding quiz", "scope_class": "Core",
+      "actor_roles": ["member"],
+      "operations": [],
+      "incoming_params": [],
+      "outgoing": [ { "target": "browse" } ],
+      "access": [ { "type": "navigation", "from": "auth (new users)" }, { "type": "navigation", "from": "browse quiz button" } ],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" },
+      "density": [
+        { "collection": "Interest cards", "entity": "Category", "surface_kind": "pane", "observed_target_first_paint": 5, "paginates": false, "min_rows": 5 }
+      ],
+      "depth": { "observed_controls_mobile": 20, "parity_bar": "90% Core" }
+    },
+    {
+      "id": "browse", "route": "/dashboard/browse", "name": "Browse (landing-variation surface)", "scope_class": "Core",
+      "actor_roles": ["visitor", "member"],
+      "operations": ["place.list", "category.list", "subfilter.list", "user.show", "recommendation.ask", "collection.add_place", "collection.remove_place"],
+      "incoming_params": ["vibe", "budget"],
+      "outgoing": [ { "target": "maps" }, { "target": "collections" }, { "target": "profile" }, { "target": "vibes" }, { "target": "onboarding" }, { "target": "auth" } ],
+      "access": [ { "type": "navigation", "from": "landing Open Loki" }, { "type": "navigation", "from": "bottom pill nav" } ],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" },
+      "density": [
+        { "collection": "Explore groups", "entity": "Category", "surface_kind": "pane", "observed_target_first_paint": 6, "paginates": false, "min_rows": 5 },
+        { "collection": "Curated vibe albums", "entity": "Place", "surface_kind": "pane", "observed_target_first_paint": 6, "paginates": false, "min_rows": 5 },
+        { "collection": "Today's picks", "entity": "Place", "surface_kind": "pane", "observed_target_first_paint": 8, "paginates": false, "min_rows": 5 }
+      ],
+      "depth": { "observed_controls_mobile": 25, "parity_bar": "90% Core" }
+    },
+    {
+      "id": "vibes", "route": "/dashboard/landing-variation/vibes", "name": "Vibe picker", "scope_class": "Core",
+      "actor_roles": ["visitor", "member"],
+      "operations": [],
+      "incoming_params": [],
+      "outgoing": [ { "target": "browse" } ],
+      "access": [ { "type": "navigation", "from": "browse See all" } ],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" },
+      "density": [
+        { "collection": "Vibe list", "entity": "Category", "surface_kind": "page_list", "observed_target_first_paint": 8, "paginates": false, "min_rows": 8 }
+      ],
+      "depth": { "observed_controls_mobile": 10, "parity_bar": "90% Core" }
+    },
+    {
+      "id": "maps", "route": "/dashboard/maps", "name": "Maps", "scope_class": "Core",
+      "actor_roles": ["visitor", "member"],
+      "operations": ["place.list", "geocode.search"],
+      "incoming_params": ["place"],
+      "outgoing": [ { "target": "browse" } ],
+      "access": [ { "type": "navigation", "from": "bottom pill nav" } ],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" },
+      "density": [
+        { "collection": "Map markers", "entity": "Place", "surface_kind": "pane", "observed_target_first_paint": 20, "paginates": false, "min_rows": 5 },
+        { "collection": "Sheet browse list", "entity": "Place", "surface_kind": "pane", "observed_target_first_paint": 10, "paginates": false, "min_rows": 5 }
+      ],
+      "depth": { "observed_controls_mobile": 15, "parity_bar": "90% Core" }
+    },
+    {
+      "id": "collections", "route": "/dashboard/collections", "name": "Collections", "scope_class": "Core",
+      "actor_roles": ["member"],
+      "operations": ["user.show", "collection.create"],
+      "incoming_params": [],
+      "outgoing": [ { "target": "collection_detail" }, { "target": "browse" } ],
+      "access": [ { "type": "navigation", "from": "bottom pill nav (signed-in)" } ],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" },
+      "density": [
+        { "collection": "Collection cards", "entity": "Collection", "surface_kind": "pane", "observed_target_first_paint": 2, "paginates": false, "min_rows": 2, "override_reason": "Live demo account data; both sides render the identical Firestore query result." }
+      ],
+      "depth": { "observed_controls_mobile": 6, "parity_bar": "90% Core" }
+    },
+    {
+      "id": "collection_detail", "route": "/dashboard/collections (detail view)", "name": "Collection detail", "scope_class": "Core",
+      "actor_roles": ["member"],
+      "operations": ["collection.delete", "collection.remove_place", "collection.share", "collaborator.add", "collaborator.remove", "shared_collection.vote"],
+      "incoming_params": ["collectionId"],
+      "outgoing": [ { "target": "collections" }, { "target": "shared_collection" } ],
+      "access": [ { "type": "navigation", "from": "collections card tap" } ],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" },
+      "density": [
+        { "collection": "Place lineup", "entity": "Place", "surface_kind": "detail_child", "observed_target_first_paint": 3, "paginates": false, "min_rows": 3 }
+      ],
+      "depth": { "observed_controls_mobile": 12, "parity_bar": "90% Core" }
+    },
+    {
+      "id": "profile", "route": "/dashboard/profile", "name": "Profile", "scope_class": "Core",
+      "actor_roles": ["member"],
+      "operations": ["user.show", "booking.add", "booking.remove"],
+      "incoming_params": [],
+      "outgoing": [ { "target": "auth" } ],
+      "access": [ { "type": "navigation", "from": "bottom pill nav (signed-in)" } ],
+      "evidence": { "level": "A", "ref": "loki-web-app/app/dashboard/profile/page.tsx", "observed_at": "2026-09-02T09:40:00+04:00" },
+      "density": [
+        { "collection": "Booking reminders", "entity": "Booking", "surface_kind": "detail_child", "observed_target_first_paint": 0, "paginates": false, "min_rows": 1, "override_reason": "Empty state is the target's own default ('No bookings yet'); rows appear only after the user adds bookings." }
+      ],
+      "depth": { "observed_controls_mobile": 8, "parity_bar": "90% Core" }
+    },
+    {
+      "id": "shared_collection", "route": "/collection/[token]", "name": "Shared collection", "scope_class": "Core",
+      "actor_roles": ["visitor", "member"],
+      "operations": ["shared_collection.show", "shared_collection.vote", "shared_collection.mutate", "shared_collection.save", "place.list"],
+      "incoming_params": ["token"],
+      "outgoing": [ { "target": "browse" } ],
+      "access": [ { "type": "deep_link", "from": "share link" } ],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" },
+      "density": [
+        { "collection": "Shared places grid", "entity": "Place", "surface_kind": "pane", "observed_target_first_paint": 3, "paginates": false, "min_rows": 3, "override_reason": "Live shared data; grid mirrors whatever the owner shared." }
+      ],
+      "depth": { "observed_controls_mobile": 10, "parity_bar": "90% Core" }
+    },
+    {
+      "id": "about", "route": "/about", "name": "About", "scope_class": "Supporting",
+      "actor_roles": ["visitor"],
+      "operations": [],
+      "incoming_params": [],
+      "outgoing": [ { "target": "landing" } ],
+      "access": [ { "type": "navigation", "from": "landing footer" } ],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" },
+      "declared_empty": { "reason": "Static marketing copy; renders no data collection." }
+    },
+    {
+      "id": "privacy", "route": "/privacy-policy", "name": "Privacy policy", "scope_class": "Supporting",
+      "actor_roles": ["visitor"],
+      "operations": [],
+      "incoming_params": [],
+      "outgoing": [],
+      "access": [ { "type": "navigation", "from": "landing footer" } ],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" },
+      "declared_empty": { "reason": "Static legal text; no data collection." }
+    },
+    {
+      "id": "cookies", "route": "/cookie-policy", "name": "Cookie policy", "scope_class": "Supporting",
+      "actor_roles": ["visitor"],
+      "operations": [],
+      "incoming_params": [],
+      "outgoing": [],
+      "access": [ { "type": "navigation", "from": "landing footer" } ],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" },
+      "declared_empty": { "reason": "Static legal text; no data collection." }
+    }
+  ],
+  "chrome": {
+    "header_links": [
+      { "text": "Browse (Home icon, pill nav)", "target": "browse" },
+      { "text": "Maps (MapPin icon, pill nav)", "target": "maps" },
+      { "text": "Collections (Library icon, pill nav, signed-in only)", "target": "collections" },
+      { "text": "Profile (User icon, pill nav, signed-in only)", "target": "profile" }
+    ],
+    "footer_links": [
+      { "text": "About", "target": "about" },
+      { "text": "How it works (#how anchor)", "target": "landing" },
+      { "text": "Privacy", "target": "privacy" },
+      { "text": "Cookies", "target": "cookies" }
+    ]
+  },
+  "actors": [
+    { "id": "visitor", "role": "visitor", "seeded": false, "differences": "Guest access on browse and maps only; Collections/Profile pill icons hidden; sign-in CTAs shown.", "evidence": { "level": "A", "ref": "loki-web-app/app/dashboard/layout.tsx:57-67" } },
+    { "id": "member_demo", "role": "member", "seeded": true, "differences": "demo@lokidxb.com demo account; full dashboard including collections, profile, voting.", "evidence": { "level": "A", "ref": "loki-app/AGENTS.md (demo credentials)" } }
+  ],
+  "clock": {
+    "frozen_now": "2026-09-02T12:00:00+04:00",
+    "timezone": "Asia/Dubai",
+    "currency": "AED",
+    "locale": "en",
+    "reason": "This is a production app sharing a live backend with the target, so no clock is frozen at runtime; the instant recorded here is the observation window of this run. Time-dependent UI (greeting, limited-time popup expiry) must use identical logic on both sides rather than a frozen instant."
+  },
+  "assumptions": [
+    { "id": "AS-001", "subject": "Density floors on live collections (Explore groups, Curated vibe albums, Today's picks, Map markers, Sheet browse list, Vibe list, Hero carousel cards, Swipe deck cards, Place lineup, Shared places grid, Collection cards, Booking reminders)", "statement": "Row counts on both sides come from the same production Firestore queries, so the clone's density equals the target's by construction; observed_target_first_paint values are the counts sampled on 2026-09-02 and vary with live data.", "why_unobservable": "The backend is live and shared; counts change as admins add/remove places.", "risk_if_wrong": "If the app filters differently (e.g. image-ready gating) a surface could render fewer rows than the web; the sweep compares rendered counts side-by-side to catch this.", "status": "open" },
+    { "id": "AS-002", "subject": "Collection.access enum", "statement": "Only 'edit' and 'view' access values exist.", "why_unobservable": "Only 'edit' observed on created collections; 'view' inferred from share flow copy.", "risk_if_wrong": "A third access level would change shared-collection permissions UI.", "status": "open" },
+    { "id": "AS-003", "subject": "Google OAuth substitution", "statement": "Email/password auth against the same Firebase project is the platform substitution for the web's Google popup (signInWithPopup does not exist on React Native; Expo Go cannot host native Google Sign-In).", "why_unobservable": "Not unobservable — platform-imposed; recorded as the one intentional behavioural divergence.", "risk_if_wrong": "None beyond the documented method difference.", "status": "accepted" },
+    { "id": "AS-004", "subject": "Orphaned routes /trial, /maintenance, /welcome, /dashboard/plans", "statement": "These routes exist on the target but are reachable only by direct URL, so they are outside the FSM's navigation graph and are verified by side-by-side comparison only (inventory dispositions exempt/static).", "why_unobservable": "No navigation edge exists on the target to observe.", "risk_if_wrong": "If the target later links to them, the FSM must gain the edge.", "status": "open" }
+  ]
+}

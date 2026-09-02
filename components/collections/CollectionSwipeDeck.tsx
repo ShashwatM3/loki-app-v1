@@ -10,7 +10,7 @@ import Animated, {
   interpolate,
   runOnJS,
 } from 'react-native-reanimated';
-import { Check, X, MapPin } from 'lucide-react-native';
+import { Check, X, MapPin, Undo2 } from 'lucide-react-native';
 import { getGradientFromString, parseCssGradient } from '../../lib/utils';
 import { placeMetaLine, genZBlurb } from '../../lib/placeBlurb';
 import { colors, fonts, radius, tw } from '../../lib/theme';
@@ -168,11 +168,16 @@ function SwipeCard({
 export function CollectionSwipeDeck({
   places,
   onVote,
+  onUndo,
+  canUndo = false,
   votedCount,
   totalCount,
 }: {
   places: Place[];
   onVote: (place: Place, vote: Vote) => void;
+  /** Takes back the most recent swipe; omit to hide the undo control. */
+  onUndo?: () => void;
+  canUndo?: boolean;
   votedCount: number;
   totalCount: number;
 }) {
@@ -222,6 +227,24 @@ export function CollectionSwipeDeck({
       </View>
 
       <View style={styles.deckActions}>
+        {onUndo ? (
+          <Pressable
+            accessibilityLabel="Undo last swipe"
+            disabled={!canUndo}
+            onPress={() => {
+              decidedRef.current.clear();
+              setFling(null);
+              onUndo();
+            }}
+            style={({ pressed }) => [
+              styles.undoBtn,
+              !canUndo && { opacity: 0.3 },
+              pressed && canUndo && { transform: [{ scale: 0.9 }], backgroundColor: 'rgba(255,255,255,0.1)' },
+            ]}
+          >
+            <Undo2 size={20} color={tw.neutral300} strokeWidth={2.5} />
+          </Pressable>
+        ) : null}
         <Pressable
           accessibilityLabel="Vote no"
           onPress={() => top && setFling({ key: cardKey(top), vote: 'no' })}
@@ -236,6 +259,7 @@ export function CollectionSwipeDeck({
         >
           <Check size={28} color={tw.emerald400} strokeWidth={3} />
         </Pressable>
+        {onUndo ? <View style={styles.undoSpacer} /> : null}
       </View>
     </View>
   );
@@ -352,7 +376,28 @@ const styles = StyleSheet.create({
     marginTop: 24,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 24,
+    gap: 16,
+  },
+  // web: size-11 rounded-full border-white/15 bg-neutral-900 text-neutral-300 shadow-lg
+  undoBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: tw.neutral900,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 15,
+    elevation: 8,
+  },
+  // keeps the yes/no pair centered when the undo button is shown (web: size-11 spacer)
+  undoSpacer: {
+    width: 44,
+    height: 44,
   },
   voteBtn: {
     width: 64,

@@ -2,6 +2,7 @@ import { getDocument, updateDocument } from './firebaseActions';
 import { SHARED_COLLECTIONS_COLLECTION } from './sharedCollections';
 import type { CollectionType, ParticipantLocation, Place } from './types';
 import { placeKey, type CollectionVotes } from './collectionVoting';
+import type { AvailabilityEntry, CollectionAvailability } from './collectionAvailability';
 
 /**
  * Where a collection's collaborative state (votes / shared locations) is
@@ -61,6 +62,66 @@ export async function persistVote(
     votes[voterId] = { ...(votes[voterId] || {}), [key]: vote };
     return { ...col, votes };
   });
+}
+
+/** Undoes one swipe so the card comes back to the deck. */
+export async function removeVote(
+  collection: CollectionType,
+  voterId: string,
+  place: Place,
+  currentEmail: string
+): Promise<void> {
+  const target = sink(collection, currentEmail);
+  const key = placeKey(place);
+
+  if (target.kind === 'shared') {
+    const docData = (await getDocument(SHARED_COLLECTIONS_COLLECTION, target.id)) as
+      | { votes?: CollectionVotes }
+      | null;
+    const votes: CollectionVotes = { ...(docData?.votes || {}) };
+    const mine = { ...(votes[voterId] || {}) };
+    delete mine[key];
+    votes[voterId] = mine;
+    await updateDocument(SHARED_COLLECTIONS_COLLECTION, target.id, {
+      votes,
+      updatedAt: new Date().toISOString(),
+    });
+    return;
+  }
+
+  await updatePersonalCollection(target.email, target.name, (col) => {
+    const votes: CollectionVotes = { ...(col.votes || {}) };
+    const mine = { ...(votes[voterId] || {}) };
+    delete mine[key];
+    votes[voterId] = mine;
+    return { ...col, votes };
+  });
+}
+
+/** Saves which days one participant is free on. */
+export async function persistAvailability(
+  collection: CollectionType,
+  participantId: string,
+  entry: AvailabilityEntry,
+  currentEmail: string
+): Promise<void> {
+  const target = sink(collection, currentEmail);
+
+  if (target.kind === 'shared') {
+    const docData = (await getDocument(SHARED_COLLECTIONS_COLLECTION, target.id)) as
+      | { availability?: CollectionAvailability }
+      | null;
+    await updateDocument(SHARED_COLLECTIONS_COLLECTION, target.id, {
+      availability: { ...(docData?.availability || {}), [participantId]: entry },
+      updatedAt: new Date().toISOString(),
+    });
+    return;
+  }
+
+  await updatePersonalCollection(target.email, target.name, (col) => ({
+    ...col,
+    availability: { ...(col.availability || {}), [participantId]: entry },
+  }));
 }
 
 /** Clears a single voter's votes so they can swipe again. */

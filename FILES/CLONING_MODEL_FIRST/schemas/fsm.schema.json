@@ -1,0 +1,229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "fsm.schema.json",
+  "title": "Behavioral FSM",
+  "description": "The clone's behavioural contract, extracted from target observation. A state is (page, signature); an action carries preconditions, deterministic local effects, a durable effect, and an executable GUI procedure. Derived from AutoWebWorld (arXiv:2602.14296) with signature backing, durable-state goals, and the two-profile selector contract added. Produced in Phase 5 of CLONING_MODEL_FIRST/AUTONOMOUS_CLONE_BUILDING.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "clone_id", "fsm_version", "spec_version", "target", "meta", "pages", "actions", "goals"],
+  "properties": {
+    "schema": { "const": "fsm.json/v1" },
+    "clone_id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "fsm_version": { "type": "integer", "minimum": 1 },
+    "spec_version": { "type": "integer", "minimum": 1, "description": "The target-spec.json version this FSM was extracted against." },
+    "created_at": { "type": "string" },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canonical_product_name", "target_url"],
+      "properties": {
+        "canonical_product_name": { "type": "string" },
+        "target_url": { "type": "string" }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["initial_page_id", "terminal_pages", "selector_attribute", "build_profiles"],
+      "properties": {
+        "initial_page_id": { "type": "string" },
+        "terminal_pages": { "type": "array", "items": { "type": "string" }, "description": "Pages that end a canonical traversal. Reachability is checked against them; they are NOT goal predicates." },
+        "actor_roles": { "type": "array", "items": { "type": "string" } },
+        "viewport_matrix": { "type": "array", "items": { "type": "object" } },
+        "frozen_now": { "type": "string" },
+        "selector_attribute": { "const": "data-fsm", "description": "Additive attribute carrying the action id. Present in the conformance build only." },
+        "build_profiles": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["conformance", "graded"],
+          "properties": {
+            "conformance": { "type": "object", "required": ["command"], "properties": { "command": { "type": "string" }, "selector_attributes": { "const": true } } },
+            "graded": { "type": "object", "required": ["command"], "properties": { "command": { "type": "string" }, "selector_attributes": { "const": false } } }
+          }
+        },
+        "traversal_bounds": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "max_states": { "type": "integer", "minimum": 1, "default": 20000 },
+            "max_depth": { "type": "integer", "minimum": 1, "default": 12 }
+          }
+        }
+      }
+    },
+    "pages": {
+      "type": "object",
+      "minProperties": 1,
+      "description": "Keyed by page id, matching target-spec.json page ids exactly.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["page_name", "route", "scope_class", "signature", "actions", "evidence"],
+        "properties": {
+          "page_name": { "type": "string" },
+          "route": { "type": "string" },
+          "scope_class": { "enum": ["Core", "Supporting", "Shell-only"] },
+          "actor_roles": { "type": "array", "items": { "type": "string" } },
+          "signature": {
+            "type": "object",
+            "description": "Minimal, stable variable assignment. A view over authoritative state plus presentation context — never a store.",
+            "additionalProperties": { "$ref": "#/$defs/signature_variable" }
+          },
+          "actions": { "type": "array", "items": { "type": "string" }, "description": "Action ids available on this page. Each action is listed by exactly one page." },
+          "model_exempt": { "$ref": "#/$defs/model_exempt" },
+          "evidence": { "$ref": "#/$defs/evidence" }
+        }
+      }
+    },
+    "actions": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "from", "is_navigation", "preconditions", "effects", "durable_effect", "gui_procedure", "observable_result", "evidence"],
+        "properties": {
+          "name": { "type": "string" },
+          "from": { "type": "string", "description": "Page id this action is available on." },
+          "is_navigation": { "type": "boolean" },
+          "to_page_id": { "type": ["string", "null"], "description": "Required and non-null when is_navigation is true." },
+          "params": { "type": "object", "additionalProperties": { "type": "object", "required": ["type", "source"], "properties": { "type": { "type": "string" }, "source": { "enum": ["user", "system"] } } } },
+          "preconditions": { "type": "array", "items": { "$ref": "#/$defs/predicate_clause" }, "description": "pre(s,a). A failed precondition is a no-op: s' = s." },
+          "effects": { "type": "array", "items": { "$ref": "#/$defs/effect_clause" }, "description": "Applied only when preconditions hold. Deterministic and local." },
+          "durable_effect": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind"],
+            "properties": {
+              "kind": { "enum": ["none", "write"] },
+              "operation": { "type": "string", "description": "target-spec.json operation id. Required when kind is write." },
+              "tables": { "type": "array", "items": { "type": "string" } },
+              "idempotency": { "type": "object", "required": ["mode"], "properties": { "mode": { "enum": ["natural", "keyed"] }, "key": { "type": "string" } } },
+              "ledger": { "type": "object", "required": ["action"], "properties": { "action": { "type": "string", "description": "Must equal the operation's ledger_action." } } }
+            }
+          },
+          "gui_procedure": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/gui_op" } },
+          "observable_result": { "type": "string", "description": "One sentence naming what a screen-driven agent can see that tells it the action landed. An action with no observable result is a grounding defect." },
+          "boundary_treatment": { "enum": ["target_like_unavailable_state", "consistently_removed"], "description": "Required when the action leaves declared scope." },
+          "evidence": { "$ref": "#/$defs/evidence" }
+        }
+      }
+    },
+    "goals": {
+      "type": "array", "minItems": 1,
+      "description": "Product completions, not benchmark tasks. Predicates are over durable state, never over page identity.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "description", "predicate"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^G_[a-z0-9_]+$" },
+          "description": { "type": "string" },
+          "requires_actions": { "type": "array", "items": { "type": "string" }, "description": "Write actions whose durable effect the predicate depends on. Used for goal-reachability checking." },
+          "predicate": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["clauses"],
+            "properties": {
+              "clauses": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/durable_clause" } },
+              "exclusions": { "type": "array", "items": { "$ref": "#/$defs/durable_clause" }, "description": "Assertions that surplus rows do not exist. Without these a predicate cannot distinguish {x,t,z} from {x,t,z,w}." }
+            }
+          }
+        }
+      }
+    },
+    "nav_skeleton": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Derived cross-page connectivity summary. For visualization and review only; it does not define execution semantics.",
+      "properties": {
+        "cross_page_edges": { "type": "array", "items": { "type": "object", "required": ["from", "to", "via"], "properties": { "from": { "type": "string" }, "to": { "type": "string" }, "via": { "type": "string" } } } }
+      }
+    }
+  },
+  "$defs": {
+    "signature_variable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "default", "backing", "evidence"],
+      "properties": {
+        "type": { "enum": ["string", "number", "integer", "boolean", "enum", "set", "object"] },
+        "domain": { "type": "array", "description": "Observed values. Prefer a narrow observed domain over a wide natural one; pair an incomplete domain with an assumptions entry." },
+        "default": {},
+        "backing": {
+          "oneOf": [
+            { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "transient" } } },
+            { "type": "object", "additionalProperties": false, "required": ["kind", "table", "column"], "properties": { "kind": { "const": "durable" }, "table": { "type": "string" }, "column": { "type": "string" }, "key": { "type": "string", "description": "Row-selection key, typically a signature path such as $.selected_reservation_id." } } }
+          ]
+        },
+        "result_set": { "type": "boolean", "default": false, "description": "True when the variable determines a result set; mutating it must reset pagination." },
+        "pagination": { "type": "boolean", "default": false },
+        "evidence": { "$ref": "#/$defs/evidence" }
+      }
+    },
+    "predicate_clause": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "op"],
+      "properties": {
+        "path": { "type": "string", "pattern": "^\\$\\.", "description": "Signature path." },
+        "op": { "enum": ["==", "!=", ">", ">=", "<", "<=", "in", "not_in", "contains", "not_contains", "is_empty", "is_not_empty"] },
+        "value": {}
+      }
+    },
+    "effect_clause": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "op"],
+      "properties": {
+        "path": { "type": "string", "pattern": "^\\$\\." },
+        "op": { "enum": ["assign", "increment", "decrement", "toggle", "set_insert", "set_delete", "reset"] },
+        "value": {},
+        "applies_to": { "enum": ["from", "destination"], "default": "from", "description": "For navigation actions, whether the effect writes the source signature before leaving or the destination signature after arriving." }
+      }
+    },
+    "durable_clause": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["table", "op"],
+      "properties": {
+        "table": { "type": "string" },
+        "where": { "type": "object" },
+        "column": { "type": "string" },
+        "op": { "enum": ["row_exists", "row_absent", "count_equals", "column_equals", "column_in"] },
+        "value": {}
+      }
+    },
+    "gui_op": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op"],
+      "properties": {
+        "op": { "enum": ["click", "hover", "type_text", "scroll_until_visible", "press_key", "select_option"], "description": "Closed vocabulary, inside the audit rubric's declared harness action space. Anything requiring drag physics or a native file dialog makes the surface model_exempt." },
+        "selector": { "type": "string", "description": "Pre-assigned and globally unique, e.g. [data-fsm='cancel_reservation']." },
+        "text": { "type": "string" },
+        "key": { "type": "string" },
+        "value": { "type": "string" }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["level", "ref"],
+      "properties": {
+        "level": { "enum": ["A", "B", "C"] },
+        "ref": { "type": "string" },
+        "observed_at": { "type": "string" }
+      }
+    },
+    "model_exempt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reason", "fidelity_treatment"],
+      "properties": {
+        "reason": { "type": "string" },
+        "fidelity_treatment": { "type": "string" }
+      }
+    }
+  }
+}

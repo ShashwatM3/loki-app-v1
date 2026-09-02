@@ -24,8 +24,6 @@ import SharedCollectionScreen from '../app/collection/SharedCollectionScreen';
 import PlansScreen from '../app/dashboard/PlansScreen';
 import VibesScreen from '../app/dashboard/VibesScreen';
 import AboutScreen from '../app/static/AboutScreen';
-import HowItWorksScreen from '../app/static/HowItWorksScreen';
-import AmbassadorsScreen from '../app/static/AmbassadorsScreen';
 import CookiePolicyScreen from '../app/static/CookiePolicyScreen';
 import PrivacyPolicyScreen from '../app/static/PrivacyPolicyScreen';
 import TrialScreen from '../app/static/TrialScreen';
@@ -43,7 +41,7 @@ export type DashboardTabParamList = {
 };
 
 export type RootStackParamList = {
-  Landing: undefined;
+  Landing: { scrollTo?: 'how' } | undefined;
   Authentication: { returnTo?: string; returnToParams?: object } | undefined;
   Dashboard: NavigatorScreenParams<DashboardTabParamList> | undefined;
   Onboarding: undefined;
@@ -51,8 +49,6 @@ export type RootStackParamList = {
   Vibes: undefined;
   Plans: undefined;
   About: undefined;
-  HowItWorks: undefined;
-  Ambassadors: undefined;
   CookiePolicy: undefined;
   PrivacyPolicy: undefined;
   Trial: undefined;
@@ -143,8 +139,6 @@ const linking: LinkingOptions<RootStackParamList> = {
       Onboarding: 'onboarding',
       Welcome: 'welcome',
       About: 'about',
-      HowItWorks: 'how-it-works',
-      Ambassadors: 'ambassadors',
       CookiePolicy: 'cookie-policy',
       PrivacyPolicy: 'privacy-policy',
       Trial: 'trial',
@@ -191,8 +185,6 @@ export default function AppNavigator() {
         <Stack.Screen name="Vibes" component={VibesScreen} />
         <Stack.Screen name="Plans" component={PlansScreen} />
         <Stack.Screen name="About" component={AboutScreen} />
-        <Stack.Screen name="HowItWorks" component={HowItWorksScreen} />
-        <Stack.Screen name="Ambassadors" component={AmbassadorsScreen} />
         <Stack.Screen name="CookiePolicy" component={CookiePolicyScreen} />
         <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
         <Stack.Screen name="Trial" component={TrialScreen} />

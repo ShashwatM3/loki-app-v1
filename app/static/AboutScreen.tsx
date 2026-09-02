@@ -49,7 +49,7 @@ export default function AboutScreen() {
           <Button size="lg" onPress={() => navigation.navigate('Landing')}>
             Explore Dubai spots
           </Button>
-          <Button size="lg" variant="outline" onPress={() => navigation.navigate('HowItWorks')}>
+          <Button size="lg" variant="outline" onPress={() => navigation.navigate('Landing', { scrollTo: 'how' })}>
             See how it works
           </Button>
         </View>

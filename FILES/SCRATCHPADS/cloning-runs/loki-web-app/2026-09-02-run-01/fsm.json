@@ -1,0 +1,846 @@
+{
+  "schema": "fsm.json/v1",
+  "clone_id": "loki-app",
+  "fsm_version": 1,
+  "spec_version": 1,
+  "created_at": "2026-09-02T10:00:00+04:00",
+  "target": { "canonical_product_name": "Loki (lokidxb.com)", "target_url": "http://localhost:3900" },
+  "meta": {
+    "initial_page_id": "landing",
+    "terminal_pages": ["browse"],
+    "actor_roles": ["visitor", "member"],
+    "viewport_matrix": [{ "name": "mobile", "width": 390, "height": 844 }],
+    "frozen_now": "2026-09-02T12:00:00+04:00",
+    "selector_attribute": "data-fsm (conceptual: this run drives replays by accessibility label / visible text; see run.json adaptation_record — no selector attributes ship in the app)",
+    "build_profiles": {
+      "conformance": { "command": "n/a — RN app driven manually via react-native-web lane", "selector_attributes": false },
+      "graded": { "command": "n/a — store build; no graded environment exists", "selector_attributes": false }
+    },
+    "traversal_bounds": { "max_states": 20000, "max_depth": 12 }
+  },
+  "pages": {
+    "landing": {
+      "page_name": "Landing", "route": "/", "scope_class": "Core", "actor_roles": ["visitor"],
+      "signature": {
+        "scrolled_to_how": { "type": "boolean", "default": false, "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/target-landing-top.png", "observed_at": "2026-09-02T09:18:00+04:00" } }
+      },
+      "actions": ["landing_sign_in", "landing_open_loki", "landing_scroll_how", "landing_footer_explore", "landing_footer_about", "landing_footer_privacy", "landing_footer_cookies"],
+      "evidence": { "level": "A", "ref": "evidence/target-landing-top.png", "observed_at": "2026-09-02T09:18:00+04:00" }
+    },
+    "auth": {
+      "page_name": "Authentication", "route": "/Authentication", "scope_class": "Core", "actor_roles": ["visitor"],
+      "signature": {
+        "mode": { "type": "enum", "domain": ["signin", "signup"], "default": "signin", "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/app-implementation-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "account_exists": { "type": "boolean", "default": false, "backing": { "kind": "durable", "table": "users", "column": "email", "key": "session email" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } }
+      },
+      "actions": ["auth_sign_in", "auth_sign_up"],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "onboarding": {
+      "page_name": "Onboarding quiz", "route": "/onboarding", "scope_class": "Core", "actor_roles": ["member"],
+      "signature": {
+        "step": { "type": "integer", "default": 1, "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } }
+      },
+      "actions": ["onboarding_advance", "onboarding_skip", "onboarding_finish"],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "browse": {
+      "page_name": "Browse (landing-variation)", "route": "/dashboard/browse", "scope_class": "Core", "actor_roles": ["visitor", "member"],
+      "signature": {
+        "search_open": { "type": "boolean", "default": false, "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "search_query": { "type": "string", "default": "", "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "chat_sheet": { "type": "boolean", "default": false, "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "chat_has_reply": { "type": "boolean", "default": false, "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "active_vibe": { "type": "string", "default": "", "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "explore_group": { "type": "string", "default": "", "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "place_sheet": { "type": "boolean", "default": false, "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "selected_place": { "type": "string", "default": "", "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "collection_selector": { "type": "boolean", "default": false, "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "saved_in_collection": { "type": "boolean", "default": false, "backing": { "kind": "durable", "table": "users.collections", "column": "places", "key": "$.selected_place" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } }
+      },
+      "actions": ["browse_toggle_search", "browse_search", "browse_open_chat", "chat_send", "browse_explore_group", "browse_open_vibe", "browse_clear_vibe", "browse_vibe_grid_open_place", "browse_open_place", "place_close_sheet", "place_open_collection_selector", "place_toggle_collection", "browse_quick_map", "browse_quick_collections", "browse_quick_quiz", "browse_see_all_vibes", "browse_nav_maps", "browse_nav_collections", "browse_nav_profile"],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "vibes": {
+      "page_name": "Vibe picker", "route": "/dashboard/landing-variation/vibes", "scope_class": "Core", "actor_roles": ["visitor", "member"],
+      "signature": {
+        "selected_vibe": { "type": "string", "default": "", "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } }
+      },
+      "actions": ["vibes_select", "vibes_apply", "vibes_back"],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "maps": {
+      "page_name": "Maps", "route": "/dashboard/maps", "scope_class": "Core", "actor_roles": ["visitor", "member"],
+      "signature": {
+        "maps_interstitial": { "type": "boolean", "default": true, "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "maps_sheet": { "type": "enum", "domain": ["peek", "expanded"], "default": "peek", "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "maps_filters": { "type": "boolean", "default": false, "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "popups_only": { "type": "boolean", "default": false, "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "selected_area": { "type": "string", "default": "", "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "selected_map_place": { "type": "string", "default": "", "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "hotspot_index": { "type": "integer", "default": 0, "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } }
+      },
+      "actions": ["maps_dismiss_interstitial", "maps_expand_sheet", "maps_open_filters", "maps_toggle_popups", "maps_area_search", "maps_select_place", "maps_hotspot", "maps_nav_browse"],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "collections": {
+      "page_name": "Collections", "route": "/dashboard/collections", "scope_class": "Core", "actor_roles": ["member"],
+      "signature": {
+        "create_collection_dialog": { "type": "boolean", "default": false, "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "collection_count": { "type": "integer", "default": 0, "backing": { "kind": "durable", "table": "users.collections", "column": "id", "key": "session email" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } }
+      },
+      "actions": ["collections_open_create", "collections_create", "collections_open_detail", "collections_nav_browse"],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "collection_detail": {
+      "page_name": "Collection detail", "route": "/dashboard/collections (detail view)", "scope_class": "Core", "actor_roles": ["member"],
+      "signature": {
+        "selected_collection": { "type": "string", "default": "col_demo", "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "place_count": { "type": "integer", "default": 3, "backing": { "kind": "durable", "table": "users.collections", "column": "places", "key": "$.selected_collection" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "delete_dialog": { "type": "boolean", "default": false, "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "collection_map_overlay": { "type": "boolean", "default": false, "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "collab_open": { "type": "boolean", "default": false, "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "collab_email": { "type": "string", "default": "", "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "share_ready": { "type": "boolean", "default": false, "backing": { "kind": "durable", "table": "sharedCollections", "column": "id", "key": "$.selected_collection" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "decide_results_open": { "type": "boolean", "default": false, "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "my_vote": { "type": "enum", "domain": ["none", "yes", "no"], "default": "none", "backing": { "kind": "durable", "table": "sharedCollections.votes", "column": "vote", "key": "$.selected_collection + session email" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } }
+      },
+      "actions": ["detail_back", "collection_share", "detail_open_share_link", "collection_delete_open", "collection_delete", "collection_collaborators", "collab_add", "collab_remove", "detail_remove_place", "collection_vote", "collection_decide_results", "detail_open_map", "detail_close_map"],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "profile": {
+      "page_name": "Profile", "route": "/dashboard/profile", "scope_class": "Core", "actor_roles": ["member"],
+      "signature": {
+        "booking_dialog": { "type": "boolean", "default": false, "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "loki-web-app/components/profile/booking-reminders.tsx", "observed_at": "2026-09-02T09:40:00+04:00" } },
+        "booking_count": { "type": "integer", "default": 0, "backing": { "kind": "durable", "table": "users.bookings", "column": "id", "key": "session email" }, "evidence": { "level": "A", "ref": "loki-web-app/components/profile/booking-reminders.tsx", "observed_at": "2026-09-02T09:40:00+04:00" } }
+      },
+      "actions": ["profile_sign_out", "profile_booking_open", "profile_booking_add", "profile_booking_remove"],
+      "evidence": { "level": "A", "ref": "loki-web-app/app/dashboard/profile/page.tsx", "observed_at": "2026-09-02T09:40:00+04:00" }
+    },
+    "shared_collection": {
+      "page_name": "Shared collection", "route": "/collection/[token]", "scope_class": "Core", "actor_roles": ["visitor", "member"],
+      "signature": {
+        "guest_named": { "type": "boolean", "default": false, "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "expanded_place": { "type": "string", "default": "", "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "shared_vote_state": { "type": "enum", "domain": ["none", "yes", "no"], "default": "none", "backing": { "kind": "durable", "table": "sharedCollections.votes", "column": "vote", "key": "token + voter" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "add_dialog": { "type": "boolean", "default": false, "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "saved_to_mine": { "type": "boolean", "default": false, "backing": { "kind": "durable", "table": "users.collections", "column": "id", "key": "viewer email + token" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } },
+        "is_editor": { "type": "boolean", "default": true, "backing": { "kind": "transient" }, "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" } }
+      },
+      "actions": ["shared_guest_identity", "shared_expand_place", "shared_vote", "shared_add_places_open", "shared_add_places", "shared_save", "shared_go_home"],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "about": {
+      "page_name": "About", "route": "/about", "scope_class": "Supporting", "actor_roles": ["visitor"],
+      "signature": {},
+      "actions": ["about_open_app"],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "privacy": {
+      "page_name": "Privacy policy", "route": "/privacy-policy", "scope_class": "Supporting", "actor_roles": ["visitor"],
+      "signature": {},
+      "actions": [],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "cookies": {
+      "page_name": "Cookie policy", "route": "/cookie-policy", "scope_class": "Supporting", "actor_roles": ["visitor"],
+      "signature": {},
+      "actions": [],
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    }
+  },
+  "actions": {
+    "landing_sign_in": {
+      "name": "Tap the Sign in pill", "from": "landing", "is_navigation": true, "to_page_id": "auth",
+      "preconditions": [], "effects": [], "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='landing_sign_in']" }],
+      "observable_result": "The Authentication screen replaces the landing page.",
+      "evidence": { "level": "A", "ref": "evidence/target-landing-top.png", "observed_at": "2026-09-02T09:18:00+04:00" }
+    },
+    "landing_open_loki": {
+      "name": "Tap Open Loki (signed out)", "from": "landing", "is_navigation": true, "to_page_id": "auth",
+      "preconditions": [], "effects": [], "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='landing_open_loki']" }],
+      "observable_result": "Signed out, the Authentication screen opens with returnTo=/dashboard/browse; signed in, Browse opens directly.",
+      "evidence": { "level": "A", "ref": "loki-web-app/app/page.tsx:18-26", "observed_at": "2026-09-02T09:18:00+04:00" }
+    },
+    "landing_scroll_how": {
+      "name": "Tap 'How it works' in the nav", "from": "landing", "is_navigation": false,
+      "preconditions": [{ "path": "$.scrolled_to_how", "op": "==", "value": false }],
+      "effects": [{ "path": "$.scrolled_to_how", "op": "assign", "value": true }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='landing_scroll_how']" }],
+      "observable_result": "The page scrolls to the 'Four steps between here and out the door.' section.",
+      "evidence": { "level": "A", "ref": "loki-web-app/app/page.tsx:37-42", "observed_at": "2026-09-02T09:18:00+04:00" }
+    },
+    "landing_footer_explore": {
+      "name": "Tap Explore Loki in the footer", "from": "landing", "is_navigation": true, "to_page_id": "auth",
+      "preconditions": [], "effects": [], "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "scroll_until_visible", "selector": "[data-fsm='landing_footer_explore']" }, { "op": "click", "selector": "[data-fsm='landing_footer_explore']" }],
+      "observable_result": "Same as Open Loki: Authentication when signed out, Browse when signed in.",
+      "evidence": { "level": "A", "ref": "loki-web-app/components/landing/section-footer.tsx:239-245", "observed_at": "2026-09-02T09:35:00+04:00" }
+    },
+    "landing_footer_about": {
+      "name": "Tap About in the footer legal row", "from": "landing", "is_navigation": true, "to_page_id": "about",
+      "preconditions": [], "effects": [], "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "scroll_until_visible", "selector": "[data-fsm='landing_footer_about']" }, { "op": "click", "selector": "[data-fsm='landing_footer_about']" }],
+      "observable_result": "The About page renders.",
+      "evidence": { "level": "A", "ref": "loki-web-app/components/landing/section-footer.tsx:268-270", "observed_at": "2026-09-02T09:35:00+04:00" }
+    },
+    "landing_footer_privacy": {
+      "name": "Tap Privacy in the footer legal row", "from": "landing", "is_navigation": true, "to_page_id": "privacy",
+      "preconditions": [], "effects": [], "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "scroll_until_visible", "selector": "[data-fsm='landing_footer_privacy']" }, { "op": "click", "selector": "[data-fsm='landing_footer_privacy']" }],
+      "observable_result": "The privacy policy page renders.",
+      "evidence": { "level": "A", "ref": "loki-web-app/components/landing/section-footer.tsx:274-276", "observed_at": "2026-09-02T09:35:00+04:00" }
+    },
+    "landing_footer_cookies": {
+      "name": "Tap Cookies in the footer legal row", "from": "landing", "is_navigation": true, "to_page_id": "cookies",
+      "preconditions": [], "effects": [], "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "scroll_until_visible", "selector": "[data-fsm='landing_footer_cookies']" }, { "op": "click", "selector": "[data-fsm='landing_footer_cookies']" }],
+      "observable_result": "The cookie policy page renders.",
+      "evidence": { "level": "A", "ref": "loki-web-app/components/landing/section-footer.tsx:277-279", "observed_at": "2026-09-02T09:35:00+04:00" }
+    },
+
+    "auth_sign_in": {
+      "name": "Sign in (returning user)", "from": "auth", "is_navigation": true, "to_page_id": "browse",
+      "preconditions": [{ "path": "$.mode", "op": "==", "value": "signin" }],
+      "effects": [{ "path": "$.account_exists", "op": "assign", "value": true }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "type_text", "selector": "[data-fsm='auth_email']", "text": "demo@lokidxb.com" }, { "op": "type_text", "selector": "[data-fsm='auth_password']", "text": "<demo password>" }, { "op": "click", "selector": "[data-fsm='auth_sign_in']" }],
+      "observable_result": "FullPageLoader plays, then Browse renders with the user's greeting name.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "auth_sign_up": {
+      "name": "Create an account (new user)", "from": "auth", "is_navigation": true, "to_page_id": "onboarding",
+      "preconditions": [],
+      "effects": [{ "path": "$.mode", "op": "assign", "value": "signup" }, { "path": "$.account_exists", "op": "assign", "value": true }],
+      "durable_effect": { "kind": "write", "operation": "account.create", "tables": ["users"], "idempotency": { "mode": "keyed", "key": "email" }, "ledger": { "action": "account.create" } },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='auth_switch_mode']" }, { "op": "type_text", "selector": "[data-fsm='auth_name']", "text": "Demo" }, { "op": "click", "selector": "[data-fsm='auth_sign_up']" }],
+      "observable_result": "A users/{email} document is created and the onboarding quiz opens.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+
+    "onboarding_advance": {
+      "name": "Advance one onboarding step", "from": "onboarding", "is_navigation": false,
+      "preconditions": [],
+      "effects": [{ "path": "$.step", "op": "increment", "value": 1 }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='onboarding_advance']" }],
+      "observable_result": "The next step renders and the progress bar fills one segment.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "onboarding_skip": {
+      "name": "Skip the quiz", "from": "onboarding", "is_navigation": true, "to_page_id": "browse",
+      "preconditions": [], "effects": [], "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='onboarding_skip']" }],
+      "observable_result": "Browse renders without a budget parameter.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "onboarding_finish": {
+      "name": "Finish the quiz (Start exploring)", "from": "onboarding", "is_navigation": true, "to_page_id": "browse",
+      "preconditions": [{ "path": "$.step", "op": "==", "value": 7 }],
+      "effects": [], "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='onboarding_finish']" }],
+      "observable_result": "Browse renders, carrying the chosen budget as a parameter.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+
+    "browse_toggle_search": {
+      "name": "Toggle the search field", "from": "browse", "is_navigation": false,
+      "preconditions": [],
+      "effects": [{ "path": "$.search_open", "op": "toggle" }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='browse_toggle_search']" }],
+      "observable_result": "The search input expands under the header (or collapses).",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "browse_search": {
+      "name": "Type a search query", "from": "browse", "is_navigation": false,
+      "preconditions": [{ "path": "$.search_open", "op": "==", "value": true }],
+      "effects": [{ "path": "$.search_query", "op": "assign", "value": "kite" }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "type_text", "selector": "[data-fsm='browse_search']", "text": "kite" }],
+      "observable_result": "The place grid filters to names matching the query.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "browse_open_chat": {
+      "name": "Open the Ask Loki chat sheet", "from": "browse", "is_navigation": false,
+      "preconditions": [{ "path": "$.chat_sheet", "op": "==", "value": false }],
+      "effects": [{ "path": "$.chat_sheet", "op": "assign", "value": true }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='browse_open_chat']" }],
+      "observable_result": "The Ask Loki sheet slides in with suggested prompts.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "chat_send": {
+      "name": "Send a chat message", "from": "browse", "is_navigation": false,
+      "preconditions": [{ "path": "$.chat_sheet", "op": "==", "value": true }],
+      "effects": [{ "path": "$.chat_has_reply", "op": "assign", "value": true }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "type_text", "selector": "[data-fsm='chat_input']", "text": "Chill spots to work with coffee" }, { "op": "click", "selector": "[data-fsm='chat_send']" }],
+      "observable_result": "Loki replies with markdown text and recommendation cards on a mini map.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "browse_explore_group": {
+      "name": "Open an explore group", "from": "browse", "is_navigation": false,
+      "preconditions": [{ "path": "$.explore_group", "op": "==", "value": "" }],
+      "effects": [{ "path": "$.explore_group", "op": "assign", "value": "experiences" }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='browse_explore_group']" }],
+      "observable_result": "Sub-filter pills and result rows for the group render.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "browse_open_vibe": {
+      "name": "Open a curated vibe album", "from": "browse", "is_navigation": false,
+      "preconditions": [{ "path": "$.active_vibe", "op": "==", "value": "" }],
+      "effects": [{ "path": "$.active_vibe", "op": "assign", "value": "date-night" }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='browse_open_vibe']" }],
+      "observable_result": "The vibe drill-down grid replaces the default sections.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "browse_clear_vibe": {
+      "name": "Clear the active vibe", "from": "browse", "is_navigation": false,
+      "preconditions": [{ "path": "$.active_vibe", "op": "!=", "value": "" }],
+      "effects": [{ "path": "$.active_vibe", "op": "assign", "value": "" }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='browse_clear_vibe']" }],
+      "observable_result": "The default browse sections return.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "browse_vibe_grid_open_place": {
+      "name": "Open a place from the vibe grid", "from": "browse", "is_navigation": false,
+      "preconditions": [{ "path": "$.active_vibe", "op": "!=", "value": "" }],
+      "effects": [{ "path": "$.selected_place", "op": "assign", "value": "pl_1" }, { "path": "$.place_sheet", "op": "assign", "value": true }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='browse_vibe_grid_open_place']" }],
+      "observable_result": "The place details sheet opens over the grid.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "browse_open_place": {
+      "name": "Open a place from Today's picks", "from": "browse", "is_navigation": false,
+      "preconditions": [{ "path": "$.place_sheet", "op": "==", "value": false }],
+      "effects": [{ "path": "$.selected_place", "op": "assign", "value": "pl_2" }, { "path": "$.place_sheet", "op": "assign", "value": true }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='browse_open_place']" }],
+      "observable_result": "The place details sheet opens with hero image and action buttons.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "place_close_sheet": {
+      "name": "Close the place details sheet", "from": "browse", "is_navigation": false,
+      "preconditions": [{ "path": "$.place_sheet", "op": "==", "value": true }],
+      "effects": [{ "path": "$.place_sheet", "op": "assign", "value": false }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='place_close_sheet']" }],
+      "observable_result": "The sheet dismisses and the browse content is visible again.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "place_open_collection_selector": {
+      "name": "Open the add-to-collection drawer", "from": "browse", "is_navigation": false,
+      "preconditions": [{ "path": "$.place_sheet", "op": "==", "value": true }],
+      "effects": [{ "path": "$.collection_selector", "op": "assign", "value": true }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='place_open_collection_selector']" }],
+      "observable_result": "A bottom drawer lists the user's collections with checkmarks.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "place_toggle_collection": {
+      "name": "Add the place to a collection", "from": "browse", "is_navigation": false,
+      "preconditions": [{ "path": "$.collection_selector", "op": "==", "value": true }, { "path": "$.saved_in_collection", "op": "==", "value": false }],
+      "effects": [{ "path": "$.saved_in_collection", "op": "assign", "value": true }],
+      "durable_effect": { "kind": "write", "operation": "collection.add_place", "tables": ["users.collections"], "idempotency": { "mode": "keyed", "key": "collection_id + place_id" }, "ledger": { "action": "collection.add_place" } },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='place_toggle_collection']" }],
+      "observable_result": "The row shows a checkmark and a toast reads 'Added to collection'.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "browse_quick_map": {
+      "name": "Quick access: Map", "from": "browse", "is_navigation": true, "to_page_id": "maps",
+      "preconditions": [], "effects": [], "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='browse_quick_map']" }],
+      "observable_result": "The Maps page opens.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "browse_quick_collections": {
+      "name": "Quick access: Collections", "from": "browse", "is_navigation": true, "to_page_id": "collections",
+      "preconditions": [], "effects": [], "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='browse_quick_collections']" }],
+      "observable_result": "The Collections page opens (signed-in).",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "browse_quick_quiz": {
+      "name": "Quick access: Quiz", "from": "browse", "is_navigation": true, "to_page_id": "onboarding",
+      "preconditions": [], "effects": [], "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='browse_quick_quiz']" }],
+      "observable_result": "The onboarding quiz opens at step 1.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "browse_see_all_vibes": {
+      "name": "See all vibes", "from": "browse", "is_navigation": true, "to_page_id": "vibes",
+      "preconditions": [], "effects": [], "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='browse_see_all_vibes']" }],
+      "observable_result": "The vibe picker page opens (bottom nav hidden there, as on the web).",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "browse_nav_maps": {
+      "name": "Pill nav: Maps", "from": "browse", "is_navigation": true, "to_page_id": "maps",
+      "preconditions": [], "effects": [], "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='browse_nav_maps']" }],
+      "observable_result": "The Maps tab becomes active (MapPin icon brightens).",
+      "evidence": { "level": "A", "ref": "loki-web-app/app/dashboard/layout.tsx:287-298", "observed_at": "2026-09-02T09:35:00+04:00" }
+    },
+    "browse_nav_collections": {
+      "name": "Pill nav: Collections", "from": "browse", "is_navigation": true, "to_page_id": "collections",
+      "preconditions": [], "effects": [], "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='browse_nav_collections']" }],
+      "observable_result": "The Collections tab becomes active (Library icon brightens).",
+      "evidence": { "level": "A", "ref": "loki-web-app/app/dashboard/layout.tsx:287-298", "observed_at": "2026-09-02T09:35:00+04:00" }
+    },
+    "browse_nav_profile": {
+      "name": "Pill nav: Profile", "from": "browse", "is_navigation": true, "to_page_id": "profile",
+      "preconditions": [], "effects": [], "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='browse_nav_profile']" }],
+      "observable_result": "The Profile tab becomes active (User icon brightens).",
+      "evidence": { "level": "A", "ref": "loki-web-app/app/dashboard/layout.tsx:287-298", "observed_at": "2026-09-02T09:35:00+04:00" }
+    },
+
+    "vibes_select": {
+      "name": "Select a vibe", "from": "vibes", "is_navigation": false,
+      "preconditions": [{ "path": "$.selected_vibe", "op": "==", "value": "" }],
+      "effects": [{ "path": "$.selected_vibe", "op": "assign", "value": "date-night" }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='vibes_select']" }],
+      "observable_result": "The row shows a check icon and a stronger border; Apply enables.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "vibes_apply": {
+      "name": "Apply the selected vibe", "from": "vibes", "is_navigation": true, "to_page_id": "browse",
+      "preconditions": [{ "path": "$.selected_vibe", "op": "!=", "value": "" }],
+      "effects": [{ "path": "$.active_vibe", "op": "assign", "value": "date-night", "applies_to": "destination" }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='vibes_apply']" }],
+      "observable_result": "Browse renders in the vibe drill-down state for the chosen vibe.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "vibes_back": {
+      "name": "Back from the vibe picker", "from": "vibes", "is_navigation": true, "to_page_id": "browse",
+      "preconditions": [], "effects": [], "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='vibes_back']" }],
+      "observable_result": "Browse renders in its previous state.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+
+    "maps_dismiss_interstitial": {
+      "name": "Dismiss the maps interstitial (Let's go)", "from": "maps", "is_navigation": false,
+      "preconditions": [{ "path": "$.maps_interstitial", "op": "==", "value": true }],
+      "effects": [{ "path": "$.maps_interstitial", "op": "assign", "value": false }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='maps_dismiss_interstitial']" }],
+      "observable_result": "The interstitial fades and the live map is interactive.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "maps_expand_sheet": {
+      "name": "Drag the bottom sheet up", "from": "maps", "is_navigation": false,
+      "preconditions": [{ "path": "$.maps_sheet", "op": "==", "value": "peek" }, { "path": "$.maps_interstitial", "op": "==", "value": false }],
+      "effects": [{ "path": "$.maps_sheet", "op": "assign", "value": "expanded" }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='maps_expand_sheet']" }],
+      "observable_result": "The sheet expands to ~88% height showing the browse list.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "maps_open_filters": {
+      "name": "Open the filters drawer", "from": "maps", "is_navigation": false,
+      "preconditions": [{ "path": "$.maps_filters", "op": "==", "value": false }, { "path": "$.maps_interstitial", "op": "==", "value": false }],
+      "effects": [{ "path": "$.maps_filters", "op": "assign", "value": true }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='maps_open_filters']" }],
+      "observable_result": "The filter tray opens with popups-only, 21+, budget and category controls.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "maps_toggle_popups": {
+      "name": "Toggle popups-only", "from": "maps", "is_navigation": false,
+      "preconditions": [{ "path": "$.maps_filters", "op": "==", "value": true }],
+      "effects": [{ "path": "$.popups_only", "op": "toggle" }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='maps_toggle_popups']" }],
+      "observable_result": "Markers filter down to active limited-time popups (red pulse).",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "maps_area_search": {
+      "name": "Search an area (geocode)", "from": "maps", "is_navigation": false,
+      "preconditions": [{ "path": "$.maps_interstitial", "op": "==", "value": false }],
+      "effects": [{ "path": "$.selected_area", "op": "assign", "value": "Dubai Marina" }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "type_text", "selector": "[data-fsm='maps_area_search_input']", "text": "Marina" }, { "op": "click", "selector": "[data-fsm='maps_area_search']" }],
+      "observable_result": "The map flies to the area and a toast confirms the move.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "maps_select_place": {
+      "name": "Tap a place marker", "from": "maps", "is_navigation": false,
+      "preconditions": [{ "path": "$.maps_interstitial", "op": "==", "value": false }, { "path": "$.selected_map_place", "op": "==", "value": "" }],
+      "effects": [{ "path": "$.selected_map_place", "op": "assign", "value": "pl_1" }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='maps_select_place']" }],
+      "observable_result": "The marker gains the rose ring and a popup card appears; tapping it opens place details.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "maps_hotspot": {
+      "name": "Shuffle to the next hotspot", "from": "maps", "is_navigation": false,
+      "preconditions": [{ "path": "$.maps_interstitial", "op": "==", "value": false }],
+      "effects": [{ "path": "$.hotspot_index", "op": "increment", "value": 1 }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='maps_hotspot']" }],
+      "observable_result": "The camera eases to the next hotspot (Downtown, Marina, JBR, ...).",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "maps_nav_browse": {
+      "name": "Pill nav: Browse (from Maps)", "from": "maps", "is_navigation": true, "to_page_id": "browse",
+      "preconditions": [], "effects": [], "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='maps_nav_browse']" }],
+      "observable_result": "Browse renders; the Home icon brightens.",
+      "evidence": { "level": "A", "ref": "loki-web-app/app/dashboard/layout.tsx:287-298", "observed_at": "2026-09-02T09:35:00+04:00" }
+    },
+
+    "collections_open_create": {
+      "name": "Open the create-collection dialog", "from": "collections", "is_navigation": false,
+      "preconditions": [{ "path": "$.create_collection_dialog", "op": "==", "value": false }],
+      "effects": [{ "path": "$.create_collection_dialog", "op": "assign", "value": true }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='collections_open_create']" }],
+      "observable_result": "The 'Make new collection ✨' dialog opens with a name input.",
+      "evidence": { "level": "A", "ref": "loki-web-app/app/dashboard/layout.tsx:230-247", "observed_at": "2026-09-02T09:35:00+04:00" }
+    },
+    "collections_create": {
+      "name": "Create the collection", "from": "collections", "is_navigation": false,
+      "preconditions": [{ "path": "$.create_collection_dialog", "op": "==", "value": true }],
+      "effects": [{ "path": "$.create_collection_dialog", "op": "assign", "value": false }, { "path": "$.collection_count", "op": "increment", "value": 1 }],
+      "durable_effect": { "kind": "write", "operation": "collection.create", "tables": ["users.collections"], "idempotency": { "mode": "natural" }, "ledger": { "action": "collection.create" } },
+      "gui_procedure": [{ "op": "type_text", "selector": "[data-fsm='collections_name_input']", "text": "Weekend Getaways" }, { "op": "click", "selector": "[data-fsm='collections_create']" }],
+      "observable_result": "The dialog closes, a toast reads 'Collection created!', and a new gradient card appears.",
+      "evidence": { "level": "A", "ref": "loki-web-app/app/dashboard/layout.tsx:147-172", "observed_at": "2026-09-02T09:35:00+04:00" }
+    },
+    "collections_open_detail": {
+      "name": "Open a collection", "from": "collections", "is_navigation": true, "to_page_id": "collection_detail",
+      "preconditions": [], "effects": [], "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='collections_open_detail']" }],
+      "observable_result": "The full-screen collection detail view opens with banner collage.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "collections_nav_browse": {
+      "name": "Pill nav: Browse (from Collections)", "from": "collections", "is_navigation": true, "to_page_id": "browse",
+      "preconditions": [], "effects": [], "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='collections_nav_browse']" }],
+      "observable_result": "Browse renders; the Home icon brightens.",
+      "evidence": { "level": "A", "ref": "loki-web-app/app/dashboard/layout.tsx:287-298", "observed_at": "2026-09-02T09:35:00+04:00" }
+    },
+
+    "detail_back": {
+      "name": "Back to the collections list", "from": "collection_detail", "is_navigation": true, "to_page_id": "collections",
+      "preconditions": [], "effects": [], "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='detail_back']" }],
+      "observable_result": "The collections list renders.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "collection_share": {
+      "name": "Generate a share link", "from": "collection_detail", "is_navigation": false,
+      "preconditions": [{ "path": "$.share_ready", "op": "==", "value": false }],
+      "effects": [{ "path": "$.share_ready", "op": "assign", "value": true }],
+      "durable_effect": { "kind": "write", "operation": "collection.share", "tables": ["sharedCollections"], "idempotency": { "mode": "keyed", "key": "collection_id" }, "ledger": { "action": "collection.share" } },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='collection_share']" }],
+      "observable_result": "A share URL is produced and copy/share actions appear.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "detail_open_share_link": {
+      "name": "Open the generated share link", "from": "collection_detail", "is_navigation": true, "to_page_id": "shared_collection",
+      "preconditions": [{ "path": "$.share_ready", "op": "==", "value": true }],
+      "effects": [], "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='detail_open_share_link']" }],
+      "observable_result": "The shared collection page renders for the token.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "collection_delete_open": {
+      "name": "Open the delete confirmation", "from": "collection_detail", "is_navigation": false,
+      "preconditions": [{ "path": "$.delete_dialog", "op": "==", "value": false }],
+      "effects": [{ "path": "$.delete_dialog", "op": "assign", "value": true }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='collection_delete_open']" }],
+      "observable_result": "An alert dialog asks to confirm deleting the collection.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "collection_delete": {
+      "name": "Confirm delete", "from": "collection_detail", "is_navigation": true, "to_page_id": "collections",
+      "preconditions": [{ "path": "$.delete_dialog", "op": "==", "value": true }],
+      "effects": [],
+      "durable_effect": { "kind": "write", "operation": "collection.delete", "tables": ["users.collections"], "idempotency": { "mode": "keyed", "key": "collection_id" }, "ledger": { "action": "collection.delete" } },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='collection_delete']" }],
+      "observable_result": "The list renders without the deleted collection.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "collection_collaborators": {
+      "name": "Open the collaborator manager", "from": "collection_detail", "is_navigation": false,
+      "preconditions": [{ "path": "$.collab_open", "op": "==", "value": false }],
+      "effects": [{ "path": "$.collab_open", "op": "assign", "value": true }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='collection_collaborators']" }],
+      "observable_result": "The collaborator pane opens with an email input.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "collab_add": {
+      "name": "Add a collaborator", "from": "collection_detail", "is_navigation": false,
+      "preconditions": [{ "path": "$.collab_open", "op": "==", "value": true }],
+      "effects": [{ "path": "$.collab_email", "op": "reset" }],
+      "durable_effect": { "kind": "write", "operation": "collaborator.add", "tables": ["users.collections", "users"], "idempotency": { "mode": "keyed", "key": "collection_id + collaborator_email" }, "ledger": { "action": "collaborator.add" } },
+      "gui_procedure": [{ "op": "type_text", "selector": "[data-fsm='collab_email_input']", "text": "friend@example.com" }, { "op": "click", "selector": "[data-fsm='collab_add']" }],
+      "observable_result": "The collaborator chip appears in the members row.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "collab_remove": {
+      "name": "Remove a collaborator", "from": "collection_detail", "is_navigation": false,
+      "preconditions": [{ "path": "$.collab_open", "op": "==", "value": true }],
+      "effects": [],
+      "durable_effect": { "kind": "write", "operation": "collaborator.remove", "tables": ["users.collections", "users"], "idempotency": { "mode": "keyed", "key": "collection_id + collaborator_email" }, "ledger": { "action": "collaborator.remove" } },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='collab_remove']" }],
+      "observable_result": "The collaborator chip disappears from the members row.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "detail_remove_place": {
+      "name": "Remove a place from the lineup", "from": "collection_detail", "is_navigation": false,
+      "preconditions": [],
+      "effects": [{ "path": "$.place_count", "op": "decrement", "value": 1 }],
+      "durable_effect": { "kind": "write", "operation": "collection.remove_place", "tables": ["users.collections"], "idempotency": { "mode": "keyed", "key": "collection_id + place_id" }, "ledger": { "action": "collection.remove_place" } },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='detail_remove_place']" }],
+      "observable_result": "The place card leaves the lineup and the count decrements.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "collection_vote": {
+      "name": "Swipe-vote yes on a place", "from": "collection_detail", "is_navigation": false,
+      "preconditions": [{ "path": "$.my_vote", "op": "==", "value": "none" }],
+      "effects": [{ "path": "$.my_vote", "op": "assign", "value": "yes" }],
+      "durable_effect": { "kind": "write", "operation": "shared_collection.vote", "tables": ["sharedCollections.votes"], "idempotency": { "mode": "keyed", "key": "collection_id + place_id + voter" }, "ledger": { "action": "shared_collection.vote" } },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='collection_vote']" }],
+      "observable_result": "The card flies right with a YES stamp and the next card surfaces.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "collection_decide_results": {
+      "name": "Open the decide results pane", "from": "collection_detail", "is_navigation": false,
+      "preconditions": [{ "path": "$.decide_results_open", "op": "==", "value": false }],
+      "effects": [{ "path": "$.decide_results_open", "op": "assign", "value": true }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='collection_decide_results']" }],
+      "observable_result": "Winner cards and the leaderboard render with vote counts.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "detail_open_map": {
+      "name": "Open the collection map overlay", "from": "collection_detail", "is_navigation": false,
+      "preconditions": [{ "path": "$.collection_map_overlay", "op": "==", "value": false }],
+      "effects": [{ "path": "$.collection_map_overlay", "op": "assign", "value": true }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='detail_open_map']" }],
+      "observable_result": "A fullscreen map shows the collection's places as thumbnail markers.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "detail_close_map": {
+      "name": "Close the collection map overlay", "from": "collection_detail", "is_navigation": false,
+      "preconditions": [{ "path": "$.collection_map_overlay", "op": "==", "value": true }],
+      "effects": [{ "path": "$.collection_map_overlay", "op": "assign", "value": false }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='detail_close_map']" }],
+      "observable_result": "The detail view is visible again.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+
+    "profile_sign_out": {
+      "name": "Sign out", "from": "profile", "is_navigation": true, "to_page_id": "auth",
+      "preconditions": [], "effects": [], "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='profile_sign_out']" }],
+      "observable_result": "The Authentication page renders and a toast reads 'Signed out'.",
+      "evidence": { "level": "A", "ref": "loki-web-app/app/dashboard/profile/page.tsx:165-175", "observed_at": "2026-09-02T09:40:00+04:00" }
+    },
+    "profile_booking_open": {
+      "name": "Open the Add booking dialog", "from": "profile", "is_navigation": false,
+      "preconditions": [{ "path": "$.booking_dialog", "op": "==", "value": false }],
+      "effects": [{ "path": "$.booking_dialog", "op": "assign", "value": true }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='profile_booking_open']" }],
+      "observable_result": "The 'When did you book it for?' dialog opens with place/date/time fields.",
+      "evidence": { "level": "A", "ref": "loki-web-app/components/profile/booking-reminders.tsx:214-307", "observed_at": "2026-09-02T09:40:00+04:00" }
+    },
+    "profile_booking_add": {
+      "name": "Save a booking reminder", "from": "profile", "is_navigation": false,
+      "preconditions": [{ "path": "$.booking_dialog", "op": "==", "value": true }],
+      "effects": [{ "path": "$.booking_dialog", "op": "assign", "value": false }, { "path": "$.booking_count", "op": "increment", "value": 1 }],
+      "durable_effect": { "kind": "write", "operation": "booking.add", "tables": ["users.bookings"], "idempotency": { "mode": "natural" }, "ledger": { "action": "booking.add" } },
+      "gui_procedure": [{ "op": "type_text", "selector": "[data-fsm='booking_place_input']", "text": "Kite Beach" }, { "op": "type_text", "selector": "[data-fsm='booking_date_input']", "text": "2026-09-05" }, { "op": "click", "selector": "[data-fsm='profile_booking_add']" }],
+      "observable_result": "The dialog closes, a toast reads 'Booking saved — add it to your calendar to get reminded', an .ics downloads, and the row appears under Calendar.",
+      "evidence": { "level": "A", "ref": "loki-web-app/components/profile/booking-reminders.tsx:99-127", "observed_at": "2026-09-02T09:40:00+04:00" }
+    },
+    "profile_booking_remove": {
+      "name": "Remove a booking reminder", "from": "profile", "is_navigation": false,
+      "preconditions": [],
+      "effects": [{ "path": "$.booking_count", "op": "decrement", "value": 1 }],
+      "durable_effect": { "kind": "write", "operation": "booking.remove", "tables": ["users.bookings"], "idempotency": { "mode": "keyed", "key": "booking_id" }, "ledger": { "action": "booking.remove" } },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='profile_booking_remove']" }],
+      "observable_result": "The row disappears and a toast reads 'Booking removed'.",
+      "evidence": { "level": "A", "ref": "loki-web-app/components/profile/booking-reminders.tsx:129-137", "observed_at": "2026-09-02T09:40:00+04:00" }
+    },
+
+    "shared_guest_identity": {
+      "name": "Set guest name and emoji", "from": "shared_collection", "is_navigation": false,
+      "preconditions": [{ "path": "$.guest_named", "op": "==", "value": false }],
+      "effects": [{ "path": "$.guest_named", "op": "assign", "value": true }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "type_text", "selector": "[data-fsm='shared_guest_name']", "text": "Sam" }, { "op": "click", "selector": "[data-fsm='shared_guest_identity']" }],
+      "observable_result": "The dialog closes and the guest appears in the crew row.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "shared_expand_place": {
+      "name": "Expand a place card", "from": "shared_collection", "is_navigation": false,
+      "preconditions": [{ "path": "$.expanded_place", "op": "==", "value": "" }],
+      "effects": [{ "path": "$.expanded_place", "op": "assign", "value": "pl_1" }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='shared_expand_place']" }],
+      "observable_result": "The card expands with tags and map/website links.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "shared_vote": {
+      "name": "Swipe-vote yes (shared)", "from": "shared_collection", "is_navigation": false,
+      "preconditions": [{ "path": "$.shared_vote_state", "op": "==", "value": "none" }],
+      "effects": [{ "path": "$.shared_vote_state", "op": "assign", "value": "yes" }],
+      "durable_effect": { "kind": "write", "operation": "shared_collection.vote", "tables": ["sharedCollections.votes"], "idempotency": { "mode": "keyed", "key": "collection_id + place_id + voter" }, "ledger": { "action": "shared_collection.vote" } },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='shared_vote']" }],
+      "observable_result": "The vote lands on the leaderboard and persists across reload.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "shared_add_places_open": {
+      "name": "Open the add-places dialog", "from": "shared_collection", "is_navigation": false,
+      "preconditions": [{ "path": "$.is_editor", "op": "==", "value": true }, { "path": "$.add_dialog", "op": "==", "value": false }],
+      "effects": [{ "path": "$.add_dialog", "op": "assign", "value": true }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='shared_add_places_open']" }],
+      "observable_result": "A dialog lists searchable places with filter chips.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "shared_add_places": {
+      "name": "Add selected places (editor)", "from": "shared_collection", "is_navigation": false,
+      "preconditions": [{ "path": "$.add_dialog", "op": "==", "value": true }],
+      "effects": [{ "path": "$.add_dialog", "op": "assign", "value": false }],
+      "durable_effect": { "kind": "write", "operation": "shared_collection.mutate", "tables": ["sharedCollections"], "idempotency": { "mode": "keyed", "key": "shared_collection_id + place_id" }, "ledger": { "action": "shared_collection.mutate" } },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='shared_add_places']" }],
+      "observable_result": "The new places render in the grid for every viewer.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "shared_save": {
+      "name": "Save to my collections", "from": "shared_collection", "is_navigation": false,
+      "preconditions": [{ "path": "$.saved_to_mine", "op": "==", "value": false }],
+      "effects": [{ "path": "$.saved_to_mine", "op": "assign", "value": true }],
+      "durable_effect": { "kind": "write", "operation": "shared_collection.save", "tables": ["users.collections"], "idempotency": { "mode": "keyed", "key": "user_email + shared_collection_id" }, "ledger": { "action": "shared_collection.save" } },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='shared_save']" }],
+      "observable_result": "A toast confirms the save and the collection appears in the viewer's Collections.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+    "shared_go_home": {
+      "name": "Go home from a shared collection", "from": "shared_collection", "is_navigation": true, "to_page_id": "browse",
+      "preconditions": [], "effects": [], "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='shared_go_home']" }],
+      "observable_result": "Browse renders.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    },
+
+    "about_open_app": {
+      "name": "About CTA back to the landing", "from": "about", "is_navigation": true, "to_page_id": "landing",
+      "preconditions": [], "effects": [], "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='about_open_app']" }],
+      "observable_result": "The landing page renders.",
+      "evidence": { "level": "A", "ref": "evidence/web-surface-map.md", "observed_at": "2026-09-02T09:30:00+04:00" }
+    }
+  },
+  "goals": [
+    {
+      "id": "G_account_created",
+      "description": "A users/{email} document exists for the newly signed-up account, created through the product UI.",
+      "requires_actions": ["auth_sign_up"],
+      "predicate": {
+        "clauses": [ { "table": "users", "where": { "email": "<new user email>" }, "column": "email", "op": "column_equals", "value": "<new user email>" } ],
+        "exclusions": [ { "table": "users", "where": { "email": "<new user email>" }, "op": "count_equals", "value": 1 } ]
+      }
+    },
+    {
+      "id": "G_collection_created",
+      "description": "A new collection exists in the owner's users doc.",
+      "requires_actions": ["collections_open_create", "collections_create"],
+      "predicate": {
+        "clauses": [ { "table": "users.collections", "where": { "name": "Weekend Getaways" }, "column": "name", "op": "column_equals", "value": "Weekend Getaways" } ],
+        "exclusions": [ { "table": "users.collections", "where": { "name": "Weekend Getaways" }, "op": "count_equals", "value": 1 } ]
+      }
+    },
+    {
+      "id": "G_place_saved",
+      "description": "The selected place is inside the chosen collection's places array.",
+      "requires_actions": ["browse_open_place", "place_open_collection_selector", "place_toggle_collection"],
+      "predicate": {
+        "clauses": [ { "table": "users.collections", "where": { "id": "<collection id>" }, "column": "places", "op": "array_contains", "value": "<place id>" } ],
+        "exclusions": [ { "table": "users.collections", "where": { "id": "<collection id>" }, "op": "array_count_equals", "value": 1 } ]
+      }
+    },
+    {
+      "id": "G_collection_shared",
+      "description": "A sharedCollections document exists for the shared collection.",
+      "requires_actions": ["collection_share"],
+      "predicate": {
+        "clauses": [ { "table": "sharedCollections", "where": { "id": "<collection id>" }, "column": "id", "op": "column_equals", "value": "<collection id>" } ],
+        "exclusions": [ { "table": "sharedCollections", "where": { "id": "<collection id>" }, "op": "count_equals", "value": 1 } ]
+      }
+    },
+    {
+      "id": "G_vote_cast",
+      "description": "Exactly one yes vote by the voter exists on the shared collection.",
+      "requires_actions": ["shared_vote"],
+      "predicate": {
+        "clauses": [ { "table": "sharedCollections.votes", "where": { "voter": "<voter>", "placeId": "<place id>" }, "column": "vote", "op": "column_equals", "value": "yes" } ],
+        "exclusions": [ { "table": "sharedCollections.votes", "where": { "voter": "<voter>", "placeId": "<place id>" }, "op": "count_equals", "value": 1 } ]
+      }
+    },
+    {
+      "id": "G_booking_recorded",
+      "description": "A booking reminder row exists in users.bookings.",
+      "requires_actions": ["profile_booking_open", "profile_booking_add"],
+      "predicate": {
+        "clauses": [ { "table": "users.bookings", "where": { "placeName": "Kite Beach" }, "column": "placeName", "op": "column_equals", "value": "Kite Beach" } ],
+        "exclusions": [ { "table": "users.bookings", "where": { "placeName": "Kite Beach" }, "op": "count_equals", "value": 1 } ]
+      }
+    },
+    {
+      "id": "G_shared_saved",
+      "description": "The shared collection is saved into the viewer's own collections.",
+      "requires_actions": ["shared_save"],
+      "predicate": {
+        "clauses": [ { "table": "users.collections", "where": { "id": "<shared collection id>" }, "column": "id", "op": "column_equals", "value": "<shared collection id>" } ],
+        "exclusions": [ { "table": "users.collections", "where": { "id": "<shared collection id>" }, "op": "count_equals", "value": 1 } ]
+      }
+    }
+  ],
+  "nav_skeleton": {
+    "cross_page_edges": [
+      { "from": "landing", "to": "auth", "via": "landing_sign_in" },
+      { "from": "landing", "to": "about", "via": "landing_footer_about" },
+      { "from": "landing", "to": "privacy", "via": "landing_footer_privacy" },
+      { "from": "landing", "to": "cookies", "via": "landing_footer_cookies" },
+      { "from": "auth", "to": "browse", "via": "auth_sign_in" },
+      { "from": "auth", "to": "onboarding", "via": "auth_sign_up" },
+      { "from": "onboarding", "to": "browse", "via": "onboarding_finish" },
+      { "from": "browse", "to": "maps", "via": "browse_nav_maps" },
+      { "from": "browse", "to": "collections", "via": "browse_nav_collections" },
+      { "from": "browse", "to": "profile", "via": "browse_nav_profile" },
+      { "from": "browse", "to": "vibes", "via": "browse_see_all_vibes" },
+      { "from": "browse", "to": "onboarding", "via": "browse_quick_quiz" },
+      { "from": "vibes", "to": "browse", "via": "vibes_apply" },
+      { "from": "maps", "to": "browse", "via": "maps_nav_browse" },
+      { "from": "collections", "to": "collection_detail", "via": "collections_open_detail" },
+      { "from": "collection_detail", "to": "collections", "via": "detail_back" },
+      { "from": "collection_detail", "to": "shared_collection", "via": "detail_open_share_link" },
+      { "from": "shared_collection", "to": "browse", "via": "shared_go_home" },
+      { "from": "profile", "to": "auth", "via": "profile_sign_out" },
+      { "from": "about", "to": "landing", "via": "about_open_app" }
+    ]
+  }
+}

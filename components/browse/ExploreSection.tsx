@@ -26,6 +26,14 @@ export function ExploreSection({ places, onSelectPlace }: ExploreSectionProps) {
   const [sub, setSub] = useState<string | null>(null);
   const [only21Plus, setOnly21Plus] = useState(false);
 
+  const groupCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const group of exploreGroups) {
+      counts.set(group.id, places.filter((p) => placeMatchesExploreGroup(p, group)).length);
+    }
+    return counts;
+  }, [exploreGroups, places]);
+
   const activeGroup = exploreGroups.find((g) => g.id === groupId) ?? null;
   const activeSub = activeGroup?.subfilters.find((s) => s.label === sub) ?? null;
 
@@ -43,7 +51,7 @@ export function ExploreSection({ places, onSelectPlace }: ExploreSectionProps) {
   return (
     <View>
       <View style={styles.headerBlock}>
-        <Text style={styles.title}>Explore</Text>
+        <Text style={styles.title}>Browse by Category</Text>
         <Text style={styles.subtitle}>
           {places.length} place{places.length === 1 ? '' : 's'} · curated by vibe & category
         </Text>
@@ -110,21 +118,34 @@ export function ExploreSection({ places, onSelectPlace }: ExploreSectionProps) {
         </View>
       ) : (
         <View style={styles.groupGrid}>
-          {exploreGroups.map((g) => (
-            <Pressable
-              key={g.id}
-              onPress={() => {
-                setGroupId(g.id);
-                setSub(null);
-              }}
-              style={styles.groupCard}
-            >
-              <Text style={styles.groupEmoji}>{g.emoji}</Text>
-              <Text numberOfLines={2} style={styles.groupCardLabel}>
-                {g.label}
-              </Text>
-            </Pressable>
-          ))}
+          {exploreGroups.map((g) => {
+            const count = groupCounts.get(g.id) ?? 0;
+            return (
+              <Pressable
+                key={g.id}
+                onPress={() => {
+                  setGroupId(g.id);
+                  setSub(null);
+                }}
+                style={({ pressed }) => [
+                  styles.groupCard,
+                  pressed && { borderColor: 'rgba(232,232,232,0.25)', backgroundColor: 'rgba(16,16,18,0.5)' },
+                ]}
+              >
+                <View style={styles.groupEmojiTile}>
+                  <Text style={styles.groupEmoji}>{g.emoji}</Text>
+                </View>
+                <View style={{ minWidth: 0, flex: 1 }}>
+                  <Text numberOfLines={1} style={styles.groupCardLabel}>
+                    {g.label}
+                  </Text>
+                  <Text style={styles.groupCardCount}>
+                    {count} place{count === 1 ? '' : 's'}
+                  </Text>
+                </View>
+              </Pressable>
+            );
+          })}
         </View>
       )}
     </View>
@@ -151,10 +172,12 @@ const styles = StyleSheet.create({
   headerBlock: {
     marginBottom: 16,
   },
+  // text-lg font-semibold tracking-tight (mobile)
   title: {
-    fontSize: 16,
+    fontSize: 18,
+    lineHeight: 28,
     fontFamily: fonts.sansSemiBold,
-    letterSpacing: -0.4,
+    letterSpacing: -0.45,
     color: colors.foreground,
   },
   subtitle: {
@@ -248,31 +271,47 @@ const styles = StyleSheet.create({
     color: colors.mutedForeground,
     fontFamily: fonts.sans,
   },
+  // grid-cols-1 gap-2.5 at mobile — full-width rows, not a 2-col grid
   groupGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+    gap: 10,
   },
+  // flex items-center gap-3 rounded-xl border-border bg-card/40 px-4 py-3.5
   groupCard: {
-    flexBasis: '48%',
-    flexGrow: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    borderRadius: radius['2xl'],
+    gap: 12,
+    borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: 'rgba(16,16,18,0.4)', // bg-muted/40
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    backgroundColor: 'rgba(9,10,12,0.4)', // bg-card/40
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  // size-9 rounded-lg bg-muted/60 text-lg
+  groupEmojiTile: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.lg,
+    backgroundColor: 'rgba(16,16,18,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   groupEmoji: {
-    fontSize: 20,
+    fontSize: 18,
+    lineHeight: 28,
   },
+  // block truncate text-sm font-semibold
   groupCardLabel: {
-    flex: 1,
     fontSize: 14,
-    fontFamily: fonts.sansMedium,
+    lineHeight: 20,
+    fontFamily: fonts.sansSemiBold,
     color: colors.foreground,
+  },
+  // block text-xs text-muted-foreground
+  groupCardCount: {
+    fontSize: 12,
+    lineHeight: 16,
+    color: colors.mutedForeground,
+    fontFamily: fonts.sans,
   },
 });

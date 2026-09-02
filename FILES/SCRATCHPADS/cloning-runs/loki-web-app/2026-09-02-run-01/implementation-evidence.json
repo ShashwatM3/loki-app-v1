@@ -1,0 +1,36 @@
+{
+  "schema": "implementation-evidence.json/v1",
+  "run_id": "2026-09-02-run-01",
+  "changed_paths": [
+    "app/landing/LandingScreen.tsx (full rebuild to the web's light 'paper' landing)",
+    "app/landing/EditorialLanding.tsx (DELETED - invented variant not on the web)",
+    "assets/screenshots/ (DELETED - only used by the invented variant)",
+    "components/landing/landingImages.ts, PhoneSwipeMock.tsx, HeroCarousel.tsx, HowItWorksVisuals.tsx, StickerFooter.tsx (NEW - ports of components/landing/*)",
+    "assets/web/landing/*.webp (NEW - 21 byte-identical copies of public/landing)",
+    "components/browse/ExploreSection.tsx (title 'Browse by Category', single-column rows, emoji tiles, per-group counts, press states)",
+    "components/PlaceDetailsContent.tsx (Add to Collection single-line fix)",
+    "app/main/ProfileScreen.tsx (BookingReminders pane added; invented 'Loki' menu group removed; legal rows now no-op like the web)",
+    "components/profile/BookingReminders.tsx (NEW), lib/calendar.ts (NEW - buildIcs/googleCalendarUrl/shareIcs)",
+    "components/collections/CollectionSwipeDeck.tsx (undo button + spacer), CollectionDecideSection.tsx (handleUndo/lastVoted), AvailabilityCalendar.tsx (NEW)",
+    "components/collections/CollectionDetailView.tsx (availability calendar + 'When:' summary)",
+    "app/collection/SharedCollectionScreen.tsx (section order Map->Swipe->Lineup->Availability->Where/When; undo; availability; Where?/When? headings)",
+    "lib/collectionPersistence.ts (removeVote, persistAvailability), lib/collectionAvailability.ts (NEW), lib/types.ts (EventBooking, bookings, availability), lib/sharedCollections.ts (availability)",
+    "app/static/HowItWorksScreen.tsx + AmbassadorsScreen.tsx + assets/web/ambassador.png (DELETED - pages removed from the web in commit e466b15)",
+    "app/static/AboutScreen.tsx ('See how it works' -> Landing scrollTo:how), navigation/AppNavigator.tsx (routes cleaned, Landing scrollTo param)",
+    "app/static/TrialScreen.tsx (image mime-type guard, web parity)",
+    "package.json (dev-facing additions: react-native-web, @expo/metro-runtime, @lottiefiles/dotlottie-react [web-only], expo-file-system, expo-sharing, @react-native-community/datetimepicker)"
+  ],
+  "commands": {
+    "tsc": "npx tsc --noEmit -> exit 0",
+    "expo_doctor": "18/18 checks passed",
+    "ios_bundle": "GET /index.ts.bundle?platform=ios -> 200",
+    "android_bundle": "GET /index.ts.bundle?platform=android -> 200",
+    "sdk_manifest": "sdkVersion 54.0.0"
+  },
+  "target_env_note": "loki-web-app/.env.local gained two dev-only placeholder vars (NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN/HOST) because instrumentation-client.ts throws in dev without them, which killed hydration; backup at .env.local.bak-cloning-run. No target source was modified.",
+  "known_open_items": [
+    "Live replay of write actions and the maps/collections/shared flows in-lane (enumerated in conformance.json)",
+    "On-device (Expo Go) finger-on-glass pass per HUMAN_STEPS.md - native rendering was verified via react-native-web proxy only",
+    "Fine-grained landing motion easings are approximations where RN lacks translateZ (depth folded into scale, recorded in HeroCarousel comments)"
+  ]
+}

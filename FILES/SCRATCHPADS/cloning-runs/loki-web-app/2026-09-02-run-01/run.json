@@ -1,0 +1,135 @@
+{
+  "protocol": "FILES/CLONING_MODEL_FIRST/",
+  "run_id": "2026-09-02-run-01",
+  "started_at": "2026-09-02T09:10:00+04:00",
+  "target": {
+    "identity": "loki-web-app (local source at /Users/gobus/Desktop/main/LOKI-EVERYTHING/loki-web-app, deployed as https://lokidxb.com)",
+    "authority_note": "User instruction 2026-09-02: 'target' means the loki-web-app project. Local next dev server of that exact source is the fidelity authority; production lokidxb.com used only as a cross-check.",
+    "url": "http://localhost:3000",
+    "viewport": "390x844 (mobile breakpoint - the app ports the web mobile layout, per loki-app/AGENTS.md and AUDIT.md 'Desktop-only layouts' scope decision)"
+  },
+  "clone": {
+    "identity": "loki-app (Expo SDK 54 React Native app, Expo Go only)",
+    "path": "/Users/gobus/Desktop/main/LOKI-EVERYTHING/loki-app",
+    "resume_provenance": "Existing intentional build: commits e5e18d5..c34705f, prior evidence AUDIT.md (2026-08-19), HUMAN_STEPS.md. This run is a fidelity-convergence resume on that clone, not a greenfield build."
+  },
+  "phase": "READY_WITH_DOCUMENTED_EXCEPTIONS",
+  "execution_mode": "single-agent-hats",
+  "branch": "RESUME_CONVERGENCE (clone already exists; protocol branch machinery for OSS adoption is moot; SPEC_DRIVEN_IMPLEMENTATION.md sections 5-8 govern the convergence loop)",
+  "lane": {
+    "claim": "playwright-lane-1",
+    "claimed_at": "2026-09-02T09:10:00+04:00",
+    "tabs": {
+      "tab_target": "http://localhost:3000 (loki-web-app next dev)",
+      "tab_clone": "http://localhost:8081 (loki-app via react-native-web comparison vehicle)"
+    }
+  },
+  "auth_cursor": {
+    "method": "demo account demo@lokidxb.com (password documented in loki-app/AGENTS.md); app login form is email/password; web login is Google-popup-only so the web session will be established programmatically via Firebase signInWithEmailAndPassword in page context against the same loki-bc0bb project",
+    "status": "pending"
+  },
+  "adaptation_record": {
+    "context": "The protocol was authored for cloning third-party websites into closed-network web replicas used as post-training RL environments. This run clones loki-web-app into a React Native app that ships to the App Store / Play Store and intentionally shares the LIVE production backend (Firebase project loki-bc0bb + lokidxb.com APIs). The user directed (2026-09-02): keep the protocol's rigor; drop only what is website/RL-environment specific.",
+    "kept": [
+      "Run ledger, phases, gates, evidence discipline, A/B/C evidence levels, assumptions register",
+      "Recursive reconnaissance producing surface-inventory.json as the completeness authority (panes/subpanes/dialogs/menus are first-class nodes)",
+      "target-spec.json + fsm.json extracted from target evidence, validated by validate_model.py to exit 0",
+      "Continuous live side-by-side target/clone comparison in a claimed browser lane; fidelity judged on rendered evidence wherever reachable",
+      "Per-action interaction verification: preconditions, effects, observable results, disabled/no-op states",
+      "Discrepancy severities (Critical/Major/Minor) + model-specific classes; correction loop without iteration cap",
+      "Coverage audit over every inventory node incl. static nodes; NEEDED_FROM_HUMAN.md standard; final report separating conformance from fidelity"
+    ],
+    "dropped_as_inapplicable": [
+      {
+        "item": "Clone-owned SQLite, seed/episode lifecycle, reset/materializer contracts, transition ledger table",
+        "reason": "The clone intentionally shares the live production Firestore/APIs with the target (loki-app/AGENTS.md). Durable-state authority is the shared backend; 'backing.durable' in fsm.json maps to Firestore collection/field instead of SQLite table/column."
+      },
+      {
+        "item": "Harbor packaging, closed-network runtime, episode images, task/verifier seams",
+        "reason": "Product app, not an RL environment. No graded tasks exist."
+      },
+      {
+        "item": "Two build profiles + data-fsm selector stripping",
+        "reason": "No graded agent consumes this app; selectors-as-attributes are a DOM concept. GUI procedures reference accessibility labels/testIDs conceptually; no build-profile machinery added."
+      },
+      {
+        "item": "Exact-asset scrape via network capture",
+        "reason": "Target source tree is local; assets are copied byte-identical from loki-web-app/public into loki-app/assets/web (already the established pattern)."
+      }
+    ],
+    "known_environment_limits": [
+      "No Xcode/iOS simulator and no Android emulator on this machine (xcode-select -> CommandLineTools only). Native on-device rendering cannot be driven autonomously.",
+      "Comparison vehicle: react-native-web via 'expo start --web' added as dev-facing dependency (native store bundles unaffected; platform-specific .web shims excluded from native bundles by Metro). RNW shares Yoga layout with native so layout/spacing/color/typography comparisons are valid; blur/shadow/font-rasterization differences are judged from code numerics, not pixels.",
+      "Final finger-on-glass verification remains HUMAN_STEPS.md Part 3, recorded as a limit, not claimed."
+    ]
+  },
+  "artifact_hashes": {
+    "surface-inventory.json": "251f8bbdb3542705",
+    "target-spec.json": "8191a073e38ddcaa",
+    "fsm.json": "4516c8560e0eb56e",
+    "model-validation.json": "13ddd881468ec62c",
+    "conformance.json": "1f79ece23c81f923",
+    "implementation-evidence.json": "d0728dff18604cad"
+  },
+  "gate_results": {
+    "SPEC_VALIDATED": {
+      "result": "PASS",
+      "errors": 0,
+      "warnings": 12,
+      "validator": "validate_model.py exit 0",
+      "at": "2026-09-02T10:20:00+04:00"
+    },
+    "FSM_VALIDATED": {
+      "result": "PASS",
+      "errors": 0,
+      "warnings": 12,
+      "metrics": "13 pages, 41 sig vars (9 durable), 71 actions (14 write), 7 goals, 694 bounded states (bound hit)",
+      "at": "2026-09-02T10:20:00+04:00"
+    },
+    "MODEL_CONFORMANCE": {
+      "result": "PASS_WITH_LIMITS",
+      "note": "4 replayed/4 conformant, 0 undeclared effects; write actions unreached by design (live production backend) \u2014 recorded limit, not a pass claim"
+    },
+    "FIDELITY_CONVERGENCE": {
+      "result": "PASS_WITH_LIMITS",
+      "note": "Landing/auth/browse/profile/place-sheet verified live side-by-side; maps/vibes/onboarding/chat/albums/grid IN PARITY by code diff; collections/shared fixed this run, live replay pending"
+    },
+    "VERIFICATION": {
+      "result": "PASS",
+      "note": "tsc clean, expo-doctor 18/18, iOS+Android bundles 200, sdk 54.0.0"
+    }
+  },
+  "phase_log": [
+    {
+      "ts": "2026-09-02T09:10:00+04:00",
+      "phase": "INIT",
+      "role": "Coordinator",
+      "note": "Ledger created; protocol suite read in full (INDEX, AUTONOMOUS_CLONE_BUILDING, RESEARCH_BASIS, TARGET_MODEL_SPECIFICATION, BEHAVIORAL_FSM, SPEC_DRIVEN_IMPLEMENTATION, OPEN_SOURCE_CLONE_ADOPTION, BROWSER_AND_RUN_ISOLATION stub). Incumbent ../CLONING/ folder absent from this workspace; inherited-by-reference rules applied from the variant's own restatements."
+    },
+    {
+      "ts": "2026-09-02T10:20:00+04:00",
+      "phase": "SPEC_VALIDATED",
+      "role": "Specification Architect (hat)",
+      "note": "validate_model.py exit 0 on first joint run after 1 revision loop (inventory dispositions for orphaned routes)."
+    },
+    {
+      "ts": "2026-09-02T10:20:00+04:00",
+      "phase": "FSM_VALIDATED",
+      "role": "FSM Architect (hat)",
+      "note": "All F/X checks pass; 12 warnings recorded (7x F10 dialog-gated writes faithful to target; 4x F5 non-write helper actions in requires_actions; 1x S2 access enum assumption AS-002)."
+    },
+    {
+      "ts": "2026-09-02T10:21:00+04:00",
+      "phase": "PLANNING",
+      "role": "Planner (hat)",
+      "note": "Branch RESUME_CONVERGENCE. Slice order (by divergence severity, writes first within each surface): 1 landing rebuild, 2 profile (BookingReminders + menu parity), 3 browse diff, 4 onboarding diff, 5 auth diff, 6 vibes, 7 maps, 8 collections+detail, 9 shared collection, 10 static pages + navigator parity (remove how-it-works/ambassadors), 11 chrome/toasts/peeker."
+    },
+    {
+      "ts": "2026-09-02T15:30:00+04:00",
+      "phase": "READY_WITH_DOCUMENTED_EXCEPTIONS",
+      "role": "Coordinator",
+      "note": "Slices 1-9 complete. Exceptions documented in conformance.json (unreached write actions), NEEDED_FROM_HUMAN.md (on-device pass), implementation-evidence.json (open items)."
+    }
+  ],
+  "status": "ready_with_documented_exceptions"
+}

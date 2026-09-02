@@ -1,0 +1,234 @@
+{
+  "schema": "fsm.json/v1",
+  "clone_id": "example",
+  "fsm_version": 1,
+  "spec_version": 1,
+  "created_at": "2026-08-31T00:00:00Z",
+  "target": { "canonical_product_name": "Example Trips", "target_url": "https://example.invalid" },
+  "meta": {
+    "initial_page_id": "trips",
+    "terminal_pages": ["trip_detail"],
+    "actor_roles": ["guest"],
+    "viewport_matrix": [{ "name": "desktop", "width": 1440, "height": 900 }],
+    "frozen_now": "2026-09-01T10:00:00-07:00",
+    "selector_attribute": "data-fsm",
+    "build_profiles": {
+      "conformance": { "command": "npm run build:conformance", "selector_attributes": true },
+      "graded": { "command": "npm run build:graded", "selector_attributes": false }
+    },
+    "traversal_bounds": { "max_states": 20000, "max_depth": 12 }
+  },
+  "pages": {
+    "trips": {
+      "page_name": "Trips",
+      "route": "/trips",
+      "scope_class": "Core",
+      "actor_roles": ["guest"],
+      "signature": {
+        "status_filter": {
+          "type": "enum",
+          "domain": ["all", "upcoming", "cancelled"],
+          "default": "all",
+          "backing": { "kind": "transient" },
+          "result_set": true,
+          "evidence": { "level": "A", "ref": "evidence/target/trips-filter-open.png", "observed_at": "2026-08-30T09:08:00Z" }
+        },
+        "page_index": {
+          "type": "integer",
+          "default": 1,
+          "backing": { "kind": "transient" },
+          "pagination": true,
+          "evidence": { "level": "A", "ref": "evidence/target/trips-page-2.png", "observed_at": "2026-08-30T09:10:00Z" }
+        }
+      },
+      "actions": ["filter_upcoming", "next_trips_page", "open_trip", "open_help"],
+      "evidence": { "level": "A", "ref": "evidence/target/trips-1440.png", "observed_at": "2026-08-30T09:05:00Z" }
+    },
+    "trip_detail": {
+      "page_name": "Trip detail",
+      "route": "/trips/:id",
+      "scope_class": "Core",
+      "actor_roles": ["guest"],
+      "signature": {
+        "selected_reservation_id": {
+          "type": "string",
+          "default": "res_confirmed_1",
+          "backing": { "kind": "transient" },
+          "evidence": { "level": "A", "ref": "evidence/target/trip-detail-1440.png", "observed_at": "2026-08-30T09:32:00Z" }
+        },
+        "reservation_status": {
+          "type": "enum",
+          "domain": ["pending", "confirmed", "cancelled", "completed"],
+          "default": "confirmed",
+          "backing": { "kind": "durable", "table": "reservations", "column": "status", "key": "$.selected_reservation_id" },
+          "evidence": { "level": "A", "ref": "evidence/api/reservation-show.json", "observed_at": "2026-08-30T09:30:00Z" }
+        },
+        "cancel_dialog_open": {
+          "type": "boolean",
+          "default": false,
+          "backing": { "kind": "transient" },
+          "evidence": { "level": "A", "ref": "evidence/target/cancel-dialog.png", "observed_at": "2026-08-30T14:30:00Z" }
+        }
+      },
+      "actions": ["open_cancel_dialog", "dismiss_cancel_dialog", "confirm_cancel", "back_to_trips"],
+      "evidence": { "level": "A", "ref": "evidence/target/trip-detail-1440.png", "observed_at": "2026-08-30T09:32:00Z" }
+    },
+    "help": {
+      "page_name": "Help centre",
+      "route": "/help",
+      "scope_class": "Shell-only",
+      "signature": {},
+      "actions": ["help_back_to_trips"],
+      "evidence": { "level": "B", "ref": "evidence/target/help-capture.png", "observed_at": "2026-08-30T10:02:00Z" }
+    }
+  },
+  "actions": {
+    "filter_upcoming": {
+      "name": "Filter trips to upcoming",
+      "from": "trips",
+      "is_navigation": false,
+      "preconditions": [{ "path": "$.status_filter", "op": "!=", "value": "upcoming" }],
+      "effects": [
+        { "path": "$.status_filter", "op": "assign", "value": "upcoming" },
+        { "path": "$.page_index", "op": "reset" }
+      ],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [
+        { "op": "click", "selector": "[data-fsm='filter_upcoming']" }
+      ],
+      "observable_result": "The filter chip reads Upcoming and the list shows only future stays.",
+      "evidence": { "level": "A", "ref": "evidence/target/trips-filter-upcoming.png", "observed_at": "2026-08-30T09:09:00Z" }
+    },
+    "next_trips_page": {
+      "name": "Go to the next page of trips",
+      "from": "trips",
+      "is_navigation": false,
+      "preconditions": [],
+      "effects": [{ "path": "$.page_index", "op": "increment", "value": 1 }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [
+        { "op": "scroll_until_visible", "selector": "[data-fsm='next_trips_page']" },
+        { "op": "click", "selector": "[data-fsm='next_trips_page']" }
+      ],
+      "observable_result": "The page indicator increments and a different set of trip cards renders.",
+      "evidence": { "level": "A", "ref": "evidence/target/trips-page-2.png", "observed_at": "2026-08-30T09:10:00Z" }
+    },
+    "open_trip": {
+      "name": "Open a trip's detail page",
+      "from": "trips",
+      "is_navigation": true,
+      "to_page_id": "trip_detail",
+      "params": { "reservationId": { "type": "string", "source": "user" } },
+      "preconditions": [],
+      "effects": [{ "path": "$.selected_reservation_id", "op": "assign", "value": "res_confirmed_1", "applies_to": "destination" }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='open_trip']" }],
+      "observable_result": "The trip detail page renders with the stay's dates and the listing title in the heading.",
+      "evidence": { "level": "A", "ref": "evidence/target/trip-detail-1440.png", "observed_at": "2026-08-30T09:32:00Z" }
+    },
+    "open_help": {
+      "name": "Open the help centre",
+      "from": "trips",
+      "is_navigation": true,
+      "to_page_id": "help",
+      "preconditions": [],
+      "effects": [],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='open_help']" }],
+      "observable_result": "The help centre landing page renders in place of the trips list.",
+      "evidence": { "level": "B", "ref": "evidence/target/help-capture.png", "observed_at": "2026-08-30T10:02:00Z" }
+    },
+    "open_cancel_dialog": {
+      "name": "Open the cancellation dialog",
+      "from": "trip_detail",
+      "is_navigation": false,
+      "preconditions": [{ "path": "$.reservation_status", "op": "==", "value": "confirmed" }],
+      "effects": [{ "path": "$.cancel_dialog_open", "op": "assign", "value": true }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='open_cancel_dialog']" }],
+      "observable_result": "A modal titled Cancel this reservation appears over the detail page.",
+      "evidence": { "level": "A", "ref": "evidence/target/cancel-dialog.png", "observed_at": "2026-08-30T14:30:00Z" }
+    },
+    "dismiss_cancel_dialog": {
+      "name": "Dismiss the cancellation dialog without cancelling",
+      "from": "trip_detail",
+      "is_navigation": false,
+      "preconditions": [{ "path": "$.cancel_dialog_open", "op": "==", "value": true }],
+      "effects": [{ "path": "$.cancel_dialog_open", "op": "assign", "value": false }],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='dismiss_cancel_dialog']" }],
+      "observable_result": "The modal closes and the reservation still reads Confirmed.",
+      "evidence": { "level": "A", "ref": "evidence/target/cancel-dialog-dismissed.png", "observed_at": "2026-08-30T14:33:00Z" }
+    },
+    "confirm_cancel": {
+      "name": "Confirm the cancellation",
+      "from": "trip_detail",
+      "is_navigation": false,
+      "preconditions": [
+        { "path": "$.cancel_dialog_open", "op": "==", "value": true },
+        { "path": "$.reservation_status", "op": "==", "value": "confirmed" }
+      ],
+      "effects": [
+        { "path": "$.reservation_status", "op": "assign", "value": "cancelled" },
+        { "path": "$.cancel_dialog_open", "op": "assign", "value": false }
+      ],
+      "durable_effect": {
+        "kind": "write",
+        "operation": "reservation.cancel",
+        "tables": ["reservations"],
+        "idempotency": { "mode": "keyed", "key": "reservation_id" },
+        "ledger": { "action": "reservation.cancel" }
+      },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='confirm_cancel']" }],
+      "observable_result": "The modal closes, the status pill reads Cancelled, and a confirmation banner names the refund.",
+      "evidence": { "level": "A", "ref": "evidence/api/reservation-cancel.json", "observed_at": "2026-08-30T14:38:00Z" }
+    },
+    "back_to_trips": {
+      "name": "Return to the trips list",
+      "from": "trip_detail",
+      "is_navigation": true,
+      "to_page_id": "trips",
+      "preconditions": [],
+      "effects": [],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='back_to_trips']" }],
+      "observable_result": "The trips list renders with the cancelled stay showing its new status.",
+      "evidence": { "level": "A", "ref": "evidence/target/trips-after-cancel.png", "observed_at": "2026-08-30T14:42:00Z" }
+    },
+    "help_back_to_trips": {
+      "name": "Return to trips from help",
+      "from": "help",
+      "is_navigation": true,
+      "to_page_id": "trips",
+      "preconditions": [],
+      "effects": [],
+      "durable_effect": { "kind": "none" },
+      "gui_procedure": [{ "op": "click", "selector": "[data-fsm='help_back_to_trips']" }],
+      "observable_result": "The trips list renders again.",
+      "evidence": { "level": "B", "ref": "evidence/target/help-capture.png", "observed_at": "2026-08-30T10:02:00Z" }
+    }
+  },
+  "goals": [
+    {
+      "id": "G_reservation_cancelled",
+      "description": "The seeded confirmed reservation is cancelled through the product UI, and nothing else is.",
+      "requires_actions": ["confirm_cancel"],
+      "predicate": {
+        "clauses": [
+          { "table": "reservations", "where": { "id": "res_confirmed_1" }, "column": "status", "op": "column_equals", "value": "cancelled" }
+        ],
+        "exclusions": [
+          { "table": "reservations", "where": { "status": "cancelled" }, "op": "count_equals", "value": 1 }
+        ]
+      }
+    }
+  ],
+  "nav_skeleton": {
+    "cross_page_edges": [
+      { "from": "trips", "to": "trip_detail", "via": "open_trip" },
+      { "from": "trips", "to": "help", "via": "open_help" },
+      { "from": "trip_detail", "to": "trips", "via": "back_to_trips" },
+      { "from": "help", "to": "trips", "via": "help_back_to_trips" }
+    ]
+  }
+}

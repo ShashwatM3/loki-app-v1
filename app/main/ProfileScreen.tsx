@@ -5,6 +5,7 @@ import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { ChevronRight } from 'lucide-react-native';
 import { Avatar } from '../../components/ui/Avatar';
 import { ProfileGlow } from '../../components/ui/glows';
+import { BookingReminders } from '../../components/profile/BookingReminders';
 import { useCounterStore } from '../../lib/store';
 import authService from '../../services/authService';
 import { toast } from '../../lib/toast';
@@ -69,8 +70,9 @@ function ListGroup({
   );
 }
 
-/** 1:1 port of app/dashboard/profile/page.tsx (plus an in-app entry point to the
- * marketing/legal pages, which on the web are reached by URL). */
+/** 1:1 port of app/dashboard/profile/page.tsx: ProfileGlow hero, BookingReminders
+ * Calendar pane, Account + Legal groups (legal rows are no-ops on the web too),
+ * and the Sign out button. */
 export default function ProfileScreen() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
@@ -78,6 +80,7 @@ export default function ProfileScreen() {
   const userData = useCounterStore((state) => state.userData);
   const isAuthLoading = useCounterStore((state) => state.isAuthLoading);
   const setUserData = useCounterStore((state) => state.setUserData);
+  const refreshUserData = useCounterStore((state) => state.refreshUserData);
 
   // Guest access is not allowed on profile (web redirects to /Authentication).
   useEffect(() => {
@@ -146,35 +149,32 @@ export default function ProfileScreen() {
 
         {/* Menu groups */}
         <View style={styles.groups}>
+          <FadeUp index={3}>
+            <BookingReminders
+              userEmail={userData.email}
+              collections={userData.collections || []}
+              bookings={userData.bookings || []}
+              onChange={() => refreshUserData(userData.email)}
+            />
+          </FadeUp>
+
           <ListGroup
             label="Account"
-            index={3}
+            index={4}
             items={[
               { label: 'Help & Support', subtitle: "Questions? We're here.", onPress: () => {} },
               { label: 'Suggest a Venue', subtitle: 'Know a hidden gem?', onPress: () => {} },
             ]}
           />
 
+          {/* The web's legal rows are no-ops (onClick: () => {}); the pages stay
+              reachable from the landing footer, exactly like the website. */}
           <ListGroup
             label="Legal"
-            index={4}
-            items={[
-              { label: 'Terms & Conditions', onPress: () => navigation.navigate('CookiePolicy') },
-              { label: 'Privacy Policy', onPress: () => navigation.navigate('PrivacyPolicy') },
-            ]}
-          />
-
-          <ListGroup
-            label="Loki"
             index={5}
             items={[
-              { label: 'About Loki', subtitle: 'Your local friend for Dubai', onPress: () => navigation.navigate('About') },
-              { label: 'How it works', onPress: () => navigation.navigate('HowItWorks') },
-              { label: 'Community Ambassadors', onPress: () => navigation.navigate('Ambassadors') },
-              { label: 'Your Plans', onPress: () => navigation.navigate('Plans') },
-              { label: 'Vibe picker', subtitle: "What's the vibe tonight?", onPress: () => navigation.navigate('Vibes') },
-              { label: 'Upload an image', subtitle: 'Trial upload page', onPress: () => navigation.navigate('Trial') },
-              { label: 'Maintenance preview', onPress: () => navigation.navigate('Maintenance') },
+              { label: 'Terms & Conditions', onPress: () => {} },
+              { label: 'Privacy Policy', onPress: () => {} },
             ]}
           />
 

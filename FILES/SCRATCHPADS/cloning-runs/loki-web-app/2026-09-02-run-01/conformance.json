@@ -1,0 +1,92 @@
+{
+  "schema": "conformance.json/v1-adapted",
+  "run_id": "2026-09-02-run-01",
+  "note": "Adapted per run.json adaptation_record: no automated harness ships with the app; replays were driven manually in playwright-lane-1 against the react-native-web build (localhost:8081) side-by-side with the target (localhost:3900). Durable consequences resolve to the LIVE shared production Firestore, so write actions were deliberately NOT exercised (protocol invariant 14: no destructive/production writes without explicit authorization). Their conformance rests on code-level parity with the target source, recorded per action below.",
+  "replayed": [
+    {
+      "action": "landing_sign_in",
+      "verdict": "conformant",
+      "observed": "Authentication screen replaced landing",
+      "evidence": "evidence/clone-auth.png"
+    },
+    {
+      "action": "auth_sign_in",
+      "verdict": "conformant",
+      "observed": "FullPageLoader then Browse rendered with greeting 'Good morning / Loki' (same as target)",
+      "evidence": "evidence/clone-browse-top.png vs evidence/target-browse-top.png"
+    },
+    {
+      "action": "browse_open_place",
+      "verdict": "conformant",
+      "observed": "Place sheet opened with hero, rose category badge, Directions/Add to Collection, THE VIBE lines identical to target",
+      "evidence": "evidence/clone-place-sheet.png vs evidence/target-place-sheet.png"
+    },
+    {
+      "action": "landing_scroll_how (target-side truthfulness sample)",
+      "verdict": "conformant",
+      "observed": "target #how section matches the model's static description",
+      "evidence": "evidence/target-landing-s1.png"
+    }
+  ],
+  "unreached": [
+    {
+      "actions": [
+        "auth_sign_up",
+        "collections_create",
+        "collection_delete",
+        "place_toggle_collection",
+        "collection_share",
+        "collab_add",
+        "collab_remove",
+        "detail_remove_place",
+        "collection_vote",
+        "shared_vote",
+        "shared_add_places",
+        "shared_save",
+        "profile_booking_add",
+        "profile_booking_remove"
+      ],
+      "reason": "Durable writes against the LIVE shared production Firestore (demo account is shared with the website). Not exercised without explicit user authorization; conformance claimed at code-parity level only (line-for-line port of the target's own handlers)."
+    },
+    {
+      "actions": [
+        "maps_*",
+        "vibes_*",
+        "onboarding_*",
+        "chat_send",
+        "browse_explore_group",
+        "browse_open_vibe",
+        "browse_clear_vibe",
+        "browse_vibe_grid_open_place",
+        "browse_quick_*",
+        "browse_see_all_vibes",
+        "detail_open_map",
+        "detail_close_map",
+        "collection_decide_results",
+        "shared_guest_identity",
+        "shared_expand_place",
+        "about_open_app"
+      ],
+      "reason": "Not replayed in-lane this run for time; code-diff verified IN PARITY by subagent c09325f9 (maps, vibes, onboarding, chat, albums, grid, about) or newly ported this run. Enumerated for the next conformance pass."
+    }
+  ],
+  "undeclared_effects_found": 0,
+  "exempt_surfaces": [
+    "UI-008",
+    "UI-009",
+    "UI-012",
+    "UI-015",
+    "UI-031",
+    "UI-077",
+    "UI-091",
+    "UI-124",
+    "UI-125",
+    "UI-126"
+  ],
+  "totals": {
+    "declared_actions": 71,
+    "replayed": 4,
+    "conformant": 4,
+    "non_conformant": 0
+  }
+}

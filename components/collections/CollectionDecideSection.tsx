@@ -19,7 +19,7 @@ import {
   type LeaderboardEntry,
   type Participant,
 } from '../../lib/collectionVoting';
-import { persistVote, clearVoterVotes } from '../../lib/collectionPersistence';
+import { persistVote, removeVote, clearVoterVotes } from '../../lib/collectionPersistence';
 import { colors, fonts, radius, tw } from '../../lib/theme';
 import type { CollectionType, Place } from '../../lib/types';
 
@@ -187,6 +187,7 @@ export function CollectionDecideSection({
   const myId = userData.email;
 
   const [votes, setVotes] = React.useState<CollectionVotes>(activeCollection.votes || {});
+  const [lastVoted, setLastVoted] = React.useState<Place | null>(null);
   const [addOpen, setAddOpen] = React.useState(false);
   const progressAnim = React.useRef(new Animated.Value(0)).current;
 
@@ -225,6 +226,7 @@ export function CollectionDecideSection({
         ...prev,
         [myId]: { ...(prev[myId] || {}), [placeKey(place)]: vote },
       }));
+      setLastVoted(place);
       persistVote(activeCollection, myId, place, vote, userData.email).catch((e) =>
         console.error('Failed to persist vote:', e)
       );
@@ -232,7 +234,22 @@ export function CollectionDecideSection({
     [activeCollection, myId, userData.email]
   );
 
+  const handleUndo = React.useCallback(() => {
+    const place = lastVoted;
+    if (!place) return;
+    setLastVoted(null);
+    setVotes((prev) => {
+      const mine = { ...(prev[myId] || {}) };
+      delete mine[placeKey(place)];
+      return { ...prev, [myId]: mine };
+    });
+    removeVote(activeCollection, myId, place, userData.email).catch((e) =>
+      console.error('Failed to undo vote:', e)
+    );
+  }, [activeCollection, lastVoted, myId, userData.email]);
+
   const handleRevote = React.useCallback(() => {
+    setLastVoted(null);
     setVotes((prev) => {
       const next = { ...prev };
       delete next[myId];
@@ -280,6 +297,8 @@ export function CollectionDecideSection({
       <CollectionSwipeDeck
         places={remaining}
         onVote={handleVote}
+        onUndo={handleUndo}
+        canUndo={Boolean(lastVoted)}
         votedCount={places.length - remaining.length}
         totalCount={places.length}
       />
